@@ -1,5 +1,5 @@
 import { player } from "./player.js";
-import { pullet } from "./bullet.js";
+import { bullets } from "./bullet.js";
 
 export class Cheat extends player {
   constructor(x, y, canvas) {
