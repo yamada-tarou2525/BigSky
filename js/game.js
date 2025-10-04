@@ -18,10 +18,9 @@ const bullets = [];
 const swords = [];
 const beams = [];
 const enemyBullets = [];
-const explosions = [];
+let explosions = [];
 
 const input = new InputHandler();
-
 let isGameOver = false;
 
 // 🔋チャージ関連
@@ -29,7 +28,7 @@ let isCharging = false;
 let chargeStartTime = 0;
 let chargeLevel = 0;
 
-// 敵生成
+// ------------------- 敵生成 -------------------
 function spawnEnemy() {
   if (enemies.length >= MAX_ENEMIES) return;
   const edge = Math.floor(Math.random() * 4);
@@ -43,9 +42,9 @@ function spawnEnemy() {
   enemies.push(new Enemy(x, y, canvas));
 }
 
-// 💥当たり判定
+// ------------------- 当たり判定 -------------------
 function checkCollisions() {
-  // 🔹弾と敵
+  // 弾と敵
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     for (let j = enemies.length - 1; j >= 0; j--) {
@@ -59,7 +58,7 @@ function checkCollisions() {
     }
   }
 
-  // 🔹剣と敵
+  // 剣と敵
   for (let i = swords.length - 1; i >= 0; i--) {
     const s = swords[i];
     for (let j = enemies.length - 1; j >= 0; j--) {
@@ -71,7 +70,7 @@ function checkCollisions() {
     }
   }
 
-  // 🔹ビームと敵
+  // ビームと敵
   for (let bm of beams) {
     for (let j = enemies.length - 1; j >= 0; j--) {
       const e = enemies[j];
@@ -89,7 +88,7 @@ function checkCollisions() {
     }
   }
 
-  // 🔹敵弾とプレイヤー
+  // 敵弾とプレイヤー
   for (let i = enemyBullets.length - 1; i >= 0; i--) {
     const eb = enemyBullets[i];
     const dist = Math.hypot(player.x - eb.x, player.y - eb.y);
@@ -99,7 +98,7 @@ function checkCollisions() {
     }
   }
 
-  // 🔹敵とプレイヤー
+  // 敵とプレイヤー
   for (const e of enemies) {
     const dist = Math.hypot(player.x - e.x, player.y - e.y);
     if (dist < player.radius + e.radius) {
@@ -109,38 +108,28 @@ function checkCollisions() {
   }
 }
 
-// 🔋チャージショット発射
+// ------------------- チャージショット -------------------
 function fireChargeShot(level) {
   const x = player.x;
   const y = player.y;
   const angle = player.angle;
 
   if (level === 1) {
-    // Lv1: 通常弾
     bullets.push(new Bullet(x, y, angle, canvas, {
-      speed: 10,
-      radius: 5,
-      color: "white"
+      speed: 10, radius: 5, color: "white"
     }));
   } else if (level === 2) {
-    // Lv2: 強弾
     bullets.push(new Bullet(x, y, angle, canvas, {
-      speed: 14,
-      radius: 10,
-      color: "yellow"
+      speed: 14, radius: 10, color: "yellow"
     }));
   } else if (level === 3) {
-    // Lv3: 貫通ビーム
     beams.push(new Beam(x, y, angle, canvas, {
-      color: "orange",
-      width: 10,
-      length: 500,
-      life: 60
+      color: "orange", width: 10, length: 500, life: 60
     }));
   }
 }
 
-// 🎮ゲームループ
+// ------------------- ゲームループ -------------------
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -152,7 +141,7 @@ function gameLoop() {
 
     // 敵の攻撃
     enemies.forEach(e => {
-      if (Math.random() < 0.02) { // 2%の確率で発射
+      if (Math.random() < 0.02) {
         const angle = Math.atan2(player.y - e.y, player.x - e.x);
         enemyBullets.push(new EnemyBullet(e.x, e.y, angle, canvas));
       }
@@ -164,14 +153,13 @@ function gameLoop() {
     enemyBullets.forEach(eb => eb.update());
     explosions.forEach(ex => ex.update());
 
-    explosions.filter(ex => ex.active);
+    // 🔥爆発を破壊的に更新
+    explosions = explosions.filter(ex => ex.active);
 
-    // 寿命・画面外処理
-    for (let arr of [bullets, swords, beams, enemyBullets]) {
-      for (let i = arr.length - 1; i >= 0; i--) {
-        if (arr[i].isOutOfBounds()) arr.splice(i, 1);
-      }
-    }
+    // 画面外・寿命処理
+    for (let i = bullets.length - 1; i >= 0; i--) if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
+    for (let i = swords.length - 1; i >= 0; i--) if (swords[i].isOutOfBounds()) swords.splice(i, 1);
+    for (let i = enemyBullets.length - 1; i >= 0; i--) if (enemyBullets[i].isOutOfBounds()) enemyBullets.splice(i, 1);
 
     // ビーム寿命
     for (let i = beams.length - 1; i >= 0; i--) {
@@ -184,7 +172,7 @@ function gameLoop() {
     checkCollisions();
   }
 
-  // 🔹描画
+  // ------------------- 描画 -------------------
   player.draw(ctx);
   explosions.forEach(ex => ex.draw(ctx));
   enemies.forEach(e => e.draw(ctx));
@@ -215,23 +203,18 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// 🕹キー入力
+// ------------------- キー入力 -------------------
 window.addEventListener("keydown", e => {
   if (isGameOver) return;
 
   // 通常ショット
-  if (e.key === " ") {
-    bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
-  }
+  if (e.key === " ") bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
 
   // 拡散ショット
   if (e.key === "Shift") {
     const spreadCount = 5;
     const spreadAngle = 10 * (Math.PI / 180);
-    for (let i = 0; i < spreadCount; i++) {
-      const offset = (i - Math.floor(spreadCount / 2)) * spreadAngle;
-      bullets.push(new Bullet(player.x, player.y, player.angle + offset, canvas));
-    }
+    for (let i = 0; i < spreadCount; i++) bullets.push(new Bullet(player.x, player.y, player.angle + (i - 2) * spreadAngle, canvas));
   }
 
   // Z：剣
@@ -240,29 +223,23 @@ window.addEventListener("keydown", e => {
     const randomRange = Math.PI / 3;
     for (let i = 0; i < swordCount; i++) {
       const offset = (Math.random() - 0.5) * randomRange;
-      swords.push(new Sword(player.x, player.y, player.angle + offset, canvas, {
-        color: "cyan", speed: 15, length: 40, width: 6
-      }));
+      swords.push(new Sword(player.x, player.y, player.angle + offset, canvas, { color: "cyan", speed: 15, length: 40, width: 6 }));
     }
   }
 
   // X：ビーム
   if (e.key === "x" || e.key === "X") {
-    beams.push(new Beam(player.x, player.y, player.angle, canvas, {
-      color: "lime", width: 6, length: 500, duration: 20
-    }));
+    beams.push(new Beam(player.x, player.y, player.angle, canvas, { color: "lime", width: 6, length: 500, duration: 20 }));
   }
 
-  // V：8方向ビームを時間差で
+  // V：8方向ビーム
   if (e.key === "v" || e.key === "V") {
     const count = 8;
     const spread = (Math.PI * 2) / count;
     const delay = 100;
     for (let i = 0; i < count; i++) {
       setTimeout(() => {
-        beams.push(new Beam(player.x, player.y, player.angle + i * spread, canvas, {
-          color: "lime", length: 250, width: 6, life: 90
-        }));
+        beams.push(new Beam(player.x, player.y, player.angle + i * spread, canvas, { color: "lime", length: 250, width: 6, life: 90 }));
       }, i * delay);
     }
   }
@@ -272,10 +249,7 @@ window.addEventListener("keydown", e => {
     const count = 12;
     const spread = (Math.PI * 2) / count;
     for (let i = 0; i < count; i++) {
-      swords.push(new Sword(player.x, player.y, i * spread, canvas, {
-        color: "magenta", speed: 6, length: 50, width: 6,
-        homing: true, turnSpeed: 0.05
-      }));
+      swords.push(new Sword(player.x, player.y, i * spread, canvas, { color: "magenta", speed: 6, length: 50, width: 6, homing: true, turnSpeed: 0.05 }));
     }
   }
 
@@ -286,17 +260,15 @@ window.addEventListener("keydown", e => {
   }
 });
 
-// Nキー離す → 発射
 window.addEventListener("keyup", e => {
+  // Nキー離す → 発射
   if (e.key === "n" || e.key === "N") {
     if (isCharging) {
       isCharging = false;
       const chargeTime = (Date.now() - chargeStartTime) / 1000;
-
       if (chargeTime < 0.7) chargeLevel = 1;
       else if (chargeTime < 1.4) chargeLevel = 2;
       else chargeLevel = 3;
-
       fireChargeShot(chargeLevel);
     }
   }
@@ -307,15 +279,13 @@ window.addEventListener("keyup", e => {
     const blastRadius = 150;
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
-      const dist = Math.hypot(player.x - e.x, player.y - e.y);
-      if (dist < blastRadius) {
-        enemies.splice(i, 1);
-      }
+      if (Math.hypot(player.x - e.x, player.y - e.y) < blastRadius) enemies.splice(i, 1);
     }
   }
 });
 
 gameLoop();
+
 
 
 
