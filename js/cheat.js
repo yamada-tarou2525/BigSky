@@ -1,4 +1,4 @@
-import { Player } from "./player.js";
+import { player } from "./player.js";
 import { Bullet } from "./bullet.js";
 
 export class Cheat extends player {
