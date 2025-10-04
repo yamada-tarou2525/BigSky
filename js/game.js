@@ -2,7 +2,6 @@ import { Player } from "./player.js";
 import { Enemy } from "./enemy.js";
 import { Bullet } from "./bullet.js";
 import { InputHandler } from "./input.js";
-import { EnemyBullet } from "./EnemyBullet.js";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -43,7 +42,7 @@ function spawnEnemy() {
 }
 
 function checkCollisions() {
-  // 弾と敵の当たり判定2
+  // 弾と敵の当たり判定
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     for (let j = enemies.length - 1; j >= 0; j--) {
