@@ -103,11 +103,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-<<<<<<< HEAD
 // 🎯 単発弾（スペースキー）と拡散弾（Shiftキー）の撃ち分け
-=======
-// スペースキーで弾を撃つ
->>>>>>> 4ecabb391d43a8b96df2cbe4514827bf262f3eda
 window.addEventListener("keydown", e => {
   if (isGameOver) return;
 
