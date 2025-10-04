@@ -1,7 +1,7 @@
-import { Player } from "./player.js";
-import { Enemy } from "./enemy.js";
-import { Bullet } from "./bullet.js";
-import { InputHandler } from "./input.js";
+import { Player } from "/player.js";
+import { Enemy } from "/enemy.js";
+import { Bullet } from "/bullet.js";
+import { InputHandler } from "/input.js";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
