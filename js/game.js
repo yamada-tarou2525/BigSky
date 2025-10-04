@@ -2,8 +2,9 @@ import { Player } from "./player.js";
 import { Enemy } from "./enemy.js";
 import { Bullet } from "./bullet.js";
 import { InputHandler } from "./input.js";
-import { Sword } from "./sword.js"; // 剣クラスを追加
+import { Sword } from "./sword.js";
 import { Beam } from "./beam.js";
+import { Explosion } from "./explosion.js";
 
 
 const canvas = document.getElementById("gameCanvas");
@@ -14,17 +15,23 @@ const MAX_ENEMIES = 10;
 const player = new Player(canvas.width / 2, canvas.height / 2, canvas);
 const enemies = [];
 const bullets = [];
-const swords = []; // 剣配列を追加
-const input = new InputHandler();
+const swords = [];
 const beams = [];
-
+const input = new InputHandler();
 
 let isGameOver = false;
+
+// 🔋チャージ関連
+let isCharging = false;
+let chargeStartTime = 0;
+let chargeLevel = 0;
+
+let explosions = [];
+
 
 // 敵生成
 function spawnEnemy() {
   if (enemies.length >= MAX_ENEMIES) return;
-
   const edge = Math.floor(Math.random() * 4);
   let x, y;
   switch (edge) {
@@ -38,7 +45,7 @@ function spawnEnemy() {
 
 // 当たり判定
 function checkCollisions() {
-  // 弾と敵の当たり判定
+  // 弾と敵
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     for (let j = enemies.length - 1; j >= 0; j--) {
@@ -52,7 +59,7 @@ function checkCollisions() {
     }
   }
 
-  // 剣と敵の当たり判定
+  // 剣と敵
   for (let i = swords.length - 1; i >= 0; i--) {
     const s = swords[i];
     for (let j = enemies.length - 1; j >= 0; j--) {
@@ -60,31 +67,20 @@ function checkCollisions() {
       const dist = Math.hypot(s.x - e.x, s.y - e.y);
       if (dist < s.length / 2 + e.radius) {
         enemies.splice(j, 1);
-        // 剣を貫通させたい場合は消さない、1体倒したら消すなら以下：
-        // swords.splice(i, 1);
-        // break;
       }
     }
   }
 
-  // ビームと敵の当たり判定
+  // ビームと敵
   for (let bm of beams) {
     for (let j = enemies.length - 1; j >= 0; j--) {
       const e = enemies[j];
-
-      // 敵の座標をビームの軸に射影して距離判定
       const dx = e.x - bm.x;
       const dy = e.y - bm.y;
-
       const beamDirX = Math.cos(bm.angle);
       const beamDirY = Math.sin(bm.angle);
-
-      // 敵の位置をビーム軸上に射影
       const proj = dx * beamDirX + dy * beamDirY;
-
-      // 射影が0～beam.lengthの範囲内にあるか
       if (proj >= 0 && proj <= bm.length) {
-        // ビーム軸からの垂線距離
         const perpDist = Math.abs(-beamDirY * dx + beamDirX * dy);
         if (perpDist < e.radius + bm.width / 2) {
           enemies.splice(j, 1);
@@ -93,7 +89,7 @@ function checkCollisions() {
     }
   }
 
-  // 敵とプレイヤーの当たり判定
+  // 敵とプレイヤー
   for (const e of enemies) {
     const dist = Math.hypot(player.x - e.x, player.y - e.y);
     if (dist < player.radius + e.radius) {
@@ -103,41 +99,90 @@ function checkCollisions() {
   }
 }
 
+// 🔥チャージショット発射関数
+function fireChargeShot(level) {
+  const x = player.x;
+  const y = player.y;
+  const angle = player.angle;
+
+  if (level === 1) {
+    // Lv1: 通常弾
+    bullets.push(new Bullet(x, y, angle, canvas, {
+      speed: 10,
+      radius: 5,
+      color: "white"
+    }));
+  } else if (level === 2) {
+    // Lv2: 強弾
+    bullets.push(new Bullet(x, y, angle, canvas, {
+      speed: 14,
+      radius: 10,
+      color: "yellow"
+    }));
+  } else if (level === 3) {
+    // Lv3: 貫通ビーム
+    beams.push(new Beam(x, y, angle, canvas, {
+      color: "orange",
+      width: 100,
+      length: 1000,
+      life: 2000
+    }));
+  }
+}
 
 // ゲームループ
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
- if (!isGameOver) {
-  player.update(input.keys);
-  spawnEnemy();
+  if (!isGameOver) {
+    player.update(input.keys);
+    spawnEnemy();
 
-  enemies.forEach(e => e.update(player.x, player.y));
-  bullets.forEach(b => b.update());
-  swords.forEach(s => s.update());
-  beams.forEach(bm => bm.update());
+    enemies.forEach(e => e.update(player.x, player.y));
+    bullets.forEach(b => b.update());
+    swords.forEach(s => s.update());
+    beams.forEach(bm => bm.update());
 
-  // 弾・剣・ビームの削除
-  for (let i = bullets.length - 1; i >= 0; i--) {
-    if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
+    explosions.forEach(ex => ex.update());
+    explosions = explosions.filter(ex => ex.active);
+
+
+    // 寿命処理
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
+    }
+    for (let i = swords.length - 1; i >= 0; i--) {
+      if (swords[i].isOutOfBounds()) swords.splice(i, 1);
+    }
+    for (let i = beams.length - 1; i >= 0; i--) {
+      if (beams[i].life !== undefined) {
+        beams[i].life--;
+        if (beams[i].life <= 0) beams.splice(i, 1);
+      }
+    }
+
+    checkCollisions();
   }
-  for (let i = swords.length - 1; i >= 0; i--) {
-    if (swords[i].isOutOfBounds()) swords.splice(i, 1);
-  }
-  for (let i = beams.length - 1; i >= 0; i--) {
-    if (beams[i].isExpired()) beams.splice(i, 1);
-  }
-
-  checkCollisions();
-}
-
 
   // 描画
   player.draw(ctx);
+  explosions.forEach(ex => ex.draw(ctx));
   enemies.forEach(e => e.draw(ctx));
   bullets.forEach(b => b.draw(ctx));
   swords.forEach(s => s.draw(ctx));
   beams.forEach(bm => bm.draw(ctx));
+
+  // 🔋チャージエフェクト
+  if (isCharging) {
+    const chargeTime = (Date.now() - chargeStartTime) / 1000;
+    const ratio = Math.min(chargeTime / 2, 1); // 2秒で最大
+    const radius = 20 + 20 * ratio;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, radius, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(255, 255, 0, ${0.5 + 0.5 * ratio})`;
+    ctx.lineWidth = 3;
+    ctx.stroke();
+  }
 
   if (isGameOver) {
     ctx.fillStyle = "red";
@@ -153,7 +198,7 @@ function gameLoop() {
 window.addEventListener("keydown", e => {
   if (isGameOver) return;
 
-  // 単発ショット
+  // 通常ショット
   if (e.key === " ") {
     bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
   }
@@ -164,40 +209,96 @@ window.addEventListener("keydown", e => {
     const spreadAngle = 10 * (Math.PI / 180);
     for (let i = 0; i < spreadCount; i++) {
       const offset = (i - Math.floor(spreadCount / 2)) * spreadAngle;
-      const angle = player.angle + offset;
-      bullets.push(new Bullet(player.x, player.y, angle, canvas));
+      bullets.push(new Bullet(player.x, player.y, player.angle + offset, canvas));
     }
   }
 
-  // Zキーで剣を飛ばす
+  // Z：剣
   if (e.key === "z" || e.key === "Z") {
     const swordCount = 5;
-    const randomRange = Math.PI / 3; // ±60度ランダム
-
+    const randomRange = Math.PI / 3;
     for (let i = 0; i < swordCount; i++) {
-      const randomOffset = (Math.random() - 0.5) * randomRange;
-      const angle = player.angle + randomOffset;
-      swords.push(new Sword(player.x, player.y, angle, canvas, {
-        color: "cyan",
-        speed: 15,
-        length: 40,
-        width: 6
+      const offset = (Math.random() - 0.5) * randomRange;
+      swords.push(new Sword(player.x, player.y, player.angle + offset, canvas, {
+        color: "cyan", speed: 15, length: 40, width: 6
       }));
     }
   }
 
-  // Xキーでビーム発射
+  // X：ビーム
   if (e.key === "x" || e.key === "X") {
     beams.push(new Beam(player.x, player.y, player.angle, canvas, {
-      color: "lime",
-      width: 6,
-      length: 500,
-      duration: 20 // フレーム数（短いほど一瞬）
-  }));
+      color: "lime", width: 6, length: 500, duration: 20
+    }));
+  }
+
+  // V：8方向ビームを時間差で
+  if (e.key === "v" || e.key === "V") {
+    const count = 8;
+    const spread = (Math.PI * 2) / count;
+    const delay = 100;
+    for (let i = 0; i < count; i++) {
+      setTimeout(() => {
+        beams.push(new Beam(player.x, player.y, player.angle + i * spread, canvas, {
+          color: "lime", length: 250, width: 6, life: 90
+        }));
+      }, i * delay);
+    }
+  }
+
+  // B：ホーミング剣
+  if (e.key === "b" || e.key === "B") {
+    const count = 12;
+    const spread = (Math.PI * 2) / count;
+    for (let i = 0; i < count; i++) {
+      swords.push(new Sword(player.x, player.y, i * spread, canvas, {
+        color: "magenta", speed: 6, length: 50, width: 6,
+        homing: true, turnSpeed: 0.05
+      }));
+    }
+  }
+
+  // N：チャージ開始
+  if ((e.key === "n" || e.key === "N") && !isCharging) {
+    isCharging = true;
+    chargeStartTime = Date.now();
+  }
+});
+
+// Nキー離す → 発射
+window.addEventListener("keyup", e => {
+  if (e.key === "n" || e.key === "N") {
+    if (isCharging) {
+      isCharging = false;
+      const chargeTime = (Date.now() - chargeStartTime) / 1000;
+
+      if (chargeTime < 0.7) chargeLevel = 1;
+      else if (chargeTime < 1.4) chargeLevel = 2;
+      else chargeLevel = 3;
+
+      fireChargeShot(chargeLevel);
+    }
+  }
+
+  // Mキーで爆発攻撃
+  if (e.key === "m" || e.key === "M") {
+    // 爆発エフェクトを追加
+    explosions.push(new Explosion(player.x, player.y));
+
+    // 範囲内の敵を削除
+    const blastRadius = 150; // 爆発範囲
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
+      const dist = Math.hypot(player.x - e.x, player.y - e.y);
+      if (dist < blastRadius) {
+        enemies.splice(i, 1);
+      }
+    }
   }
 
 });
 
 gameLoop();
+
 
 
