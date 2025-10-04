@@ -1,8 +1,3 @@
-<<<<<<< HEAD
-=======
-import { EnemyBullet } from "./enemyBullet.js";
-
->>>>>>> 699ba7c627c3c6a14c888e941deda30b19d5f086
 export class Enemy {
   constructor(x, y, canvas) {
     this.x = x;

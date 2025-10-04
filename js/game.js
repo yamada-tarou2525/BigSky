@@ -2,10 +2,6 @@ import { Player } from "./player.js";
 import { Enemy } from "./enemy.js";
 import { Bullet } from "./bullet.js";
 import { InputHandler } from "./input.js";
-<<<<<<< HEAD
-=======
-import { EnemyBullet } from "./enemyBullet.js";
->>>>>>> 699ba7c627c3c6a14c888e941deda30b19d5f086
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -102,11 +98,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-<<<<<<< HEAD
 // スペースキーで弾を撃つ処理（連射制御は簡単に）
-=======
-// 🎯 単発弾（スペースキー）と拡散弾（Shiftキー）の撃ち分け
->>>>>>> 699ba7c627c3c6a14c888e941deda30b19d5f086
 window.addEventListener("keydown", e => {
   if (isGameOver) return;
 
