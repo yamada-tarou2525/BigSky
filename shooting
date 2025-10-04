@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>2Dシューティングゲーム（完全版）</title>
+<style>
+  body {
+    background: #000;
+    color: #fff;
+    font-family: sans-serif;
+    text-align: center;
+    margin: 0; padding: 0;
+    user-select: none;
+  }
+  canvas {
+    background: #111;
+    display: block;
+    margin: 20px auto;
+    border: 2px solid #444;
+  }
+</style>
+</head>
+<body>
+<h1>2Dシューティングゲーム（完全版）</h1>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<script>
+(() => {
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+
+  const PLAYER_RADIUS = 10;
+  const ENEMY_RADIUS = 10;
+  const BULLET_RADIUS = 4;
+
+  let keys = {};
+  let isGameOver = false;
+
+  class Player {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.angle = 0; // ラジアン
+      this.speed = 5;
+    }
+    update() {
+      if (isGameOver) return;
+
+      let dx = 0, dy = 0;
+      if (keys["ArrowLeft"])  dx -= 1;
+      if (keys["ArrowRight"]) dx += 1;
+      if (keys["ArrowUp"])    dy -= 1;
+      if (keys["ArrowDown"])  dy += 1;
+
+      if (dx !== 0 || dy !== 0) {
+        this.angle = Math.atan2(dy, dx);
+        let len = Math.sqrt(dx*dx + dy*dy);
+        this.x += this.speed * (dx / len);
+        this.y += this.speed * (dy / len);
+
+        // 画面内制限
+        this.x = Math.min(Math.max(this.x, PLAYER_RADIUS), canvas.width - PLAYER_RADIUS);
+        this.y = Math.min(Math.max(this.y, PLAYER_RADIUS), canvas.height - PLAYER_RADIUS);
+      }
+    }
+    draw() {
+      // 青い丸（自機）
+      ctx.fillStyle = "blue";
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, PLAYER_RADIUS, 0, Math.PI*2);
+      ctx.fill();
+
+      // 向き矢印
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(this.x, this.y);
+      ctx.lineTo(
+        this.x + Math.cos(this.angle) * PLAYER_RADIUS * 2,
+        this.y + Math.sin(this.angle) * PLAYER_RADIUS * 2
+      );
+      ctx.stroke();
+    }
+  }
+
+  class Enemy {
+    constructor(x, y) {
+      this.x = x;
+      this.y = y;
+      this.speed = 2;
+    }
+    update(targetX, targetY) {
+      let angle = Math.atan2(targetY - this.y, targetX - this.x);
+      this.x += Math.cos(angle) * this.speed;
+      this.y += Math.sin(angle) * this.speed;
+    }
+    draw() {
+      ctx.fillStyle = "red";
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, ENEMY_RADIUS, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  class Bullet {
+    constructor(x, y, angle) {
+      this.x = x;
+      this.y = y;
+      this.speed = 10;
+      this.dx = Math.cos(angle) * this.speed;
+      this.dy = Math.sin(angle) * this.speed;
+    }
+    update() {
+      this.x += this.dx;
+      this.y += this.dy;
+    }
+    draw() {
+      ctx.fillStyle = "yellow";
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, BULLET_RADIUS, 0, Math.PI*2);
+      ctx.fill();
+    }
+    isOutOfBounds() {
+      return (
+        this.x < 0 || this.x > canvas.width ||
+        this.y < 0 || this.y > canvas.height
+      );
+    }
+  }
+
+  const player = new Player(canvas.width/2, canvas.height/2);
+  const enemies = [];
+  const bullets = [];
+
+  function spawnEnemy() {
+    if (enemies.length >= 5) return;
+    // 画面の上下左右の端からランダム出現
+    const edge = Math.floor(Math.random() * 4);
+    let x, y;
+    switch(edge) {
+      case 0: // 上
+        x = Math.random() * canvas.width;
+        y = 0;
+        break;
+      case 1: // 下
+        x = Math.random() * canvas.width;
+        y = canvas.height;
+        break;
+      case 2: // 左
+        x = 0;
+        y = Math.random() * canvas.height;
+        break;
+      case 3: // 右
+        x = canvas.width;
+        y = Math.random() * canvas.height;
+        break;
+    }
+    enemies.push(new Enemy(x, y));
+  }
+
+  function checkCollisions() {
+    // 弾と敵の当たり判定
+    for (let i = bullets.length - 1; i >= 0; i--) {
+      const b = bullets[i];
+      for (let j = enemies.length - 1; j >= 0; j--) {
+        const e = enemies[j];
+        const dist = Math.hypot(b.x - e.x, b.y - e.y);
+        if (dist < BULLET_RADIUS + ENEMY_RADIUS) {
+          bullets.splice(i, 1);
+          enemies.splice(j, 1);
+          break;
+        }
+      }
+    }
+
+    // 敵と自機の当たり判定
+    for (const e of enemies) {
+      const dist = Math.hypot(player.x - e.x, player.y - e.y);
+      if (dist < PLAYER_RADIUS + ENEMY_RADIUS) {
+        isGameOver = true;
+        break;
+      }
+    }
+  }
+
+  function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    if (!isGameOver) {
+      player.update();
+      spawnEnemy();
+
+      enemies.forEach(e => e.update(player.x, player.y));
+      bullets.forEach(b => b.update());
+
+      // 画面外の弾削除
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
+      }
+
+      checkCollisions();
+    }
+
+    player.draw();
+    enemies.forEach(e => e.draw());
+    bullets.forEach(b => b.draw());
+
+    if (isGameOver) {
+      ctx.fillStyle = "red";
+      ctx.font = "bold 48px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
+    }
+
+    requestAnimationFrame(gameLoop);
+  }
+
+  // キー入力イベント
+  window.addEventListener("keydown", e => {
+    if (!keys[e.key]) keys[e.key] = true;
+
+    // スペースキーで弾発射（連射防止はここでは未実装）
+    if (e.key === " " && !isGameOver) {
+      bullets.push(new Bullet(player.x, player.y, player.angle));
+    }
+  });
+
+  window.addEventListener("keyup", e => {
+    keys[e.key] = false;
+  });
+
+  gameLoop();
+
+})();
+</script>
+</body>
+</html>
