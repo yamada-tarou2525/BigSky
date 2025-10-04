@@ -6,6 +6,8 @@ export class Player {
     this.speed = 5;
     this.canvas = canvas;
     this.radius = 10;
+    this.isInvincible = false;
+    this.lastCKey = false;
   }
   update(keys) {
     let dx = 0, dy = 0;
@@ -41,4 +43,12 @@ export class Player {
     );
     ctx.stroke();
   }
+  toggleInvincibility(keys) {
+      const isCPressed = keys["c"] || keys["C"];
+      if (isCPressed && !this.lastCKey) {
+        this.isInvincible = !this.isInvincible; // ON/OFF 切替
+        console.log("無敵:", this.isInvincible);
+      }
+      this.lastCKey = isCPressed;
+    }
 }

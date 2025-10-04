@@ -96,9 +96,15 @@ function checkCollisions() {
   // 敵とプレイヤー
   for (const e of enemies) {
     const dist = Math.hypot(player.x - e.x, player.y - e.y);
-    if (dist < player.radius + e.radius) {
-      isGameOver = true;
-      break;
+    //if (dist < player.radius + e.radius) {
+      //isGameOver = true;
+      //break;
+    //}
+    if (dist < player.radius + e.radius){
+      if (!player.isInvincible) {
+        isGameOver = true;
+        break;
+      }
     }
   }
 }
@@ -109,6 +115,7 @@ function gameLoop() {
 
   if (!isGameOver) {
     player.update(input.keys);
+    player.toggleInvincibility(input.keys);
     spawnEnemy();
 
     enemies.forEach(e => {
