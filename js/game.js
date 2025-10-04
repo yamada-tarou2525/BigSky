@@ -4,6 +4,8 @@ import { Bullet } from "./bullet.js";
 import { InputHandler } from "./input.js";
 import { Sword } from "./sword.js";
 import { Beam } from "./beam.js";
+import { Explosion } from "./explosion.js";
+
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -23,6 +25,9 @@ let isGameOver = false;
 let isCharging = false;
 let chargeStartTime = 0;
 let chargeLevel = 0;
+
+let explosions = [];
+
 
 // 敵生成
 function spawnEnemy() {
@@ -137,6 +142,9 @@ function gameLoop() {
     bullets.forEach(b => b.update());
     swords.forEach(s => s.update());
     beams.forEach(bm => bm.update());
+    explosions.forEach(ex => ex.update());
+    explosions = explosions.filter(ex => ex.active);
+
 
     // 寿命処理
     for (let i = bullets.length - 1; i >= 0; i--) {
@@ -157,6 +165,7 @@ function gameLoop() {
 
   // 描画
   player.draw(ctx);
+  explosions.forEach(ex => ex.draw(ctx));
   enemies.forEach(e => e.draw(ctx));
   bullets.forEach(b => b.draw(ctx));
   swords.forEach(s => s.draw(ctx));
@@ -269,6 +278,23 @@ window.addEventListener("keyup", e => {
       fireChargeShot(chargeLevel);
     }
   }
+
+  // Mキーで爆発攻撃
+  if (e.key === "m" || e.key === "M") {
+    // 爆発エフェクトを追加
+    explosions.push(new Explosion(player.x, player.y));
+
+    // 範囲内の敵を削除
+    const blastRadius = 150; // 爆発範囲
+    for (let i = enemies.length - 1; i >= 0; i--) {
+      const e = enemies[i];
+      const dist = Math.hypot(player.x - e.x, player.y - e.y);
+      if (dist < blastRadius) {
+        enemies.splice(i, 1);
+      }
+    }
+  }
+
 });
 
 gameLoop();
