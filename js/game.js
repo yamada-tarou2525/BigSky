@@ -2,12 +2,12 @@ import { Player } from "./player.js";
 import { Enemy } from "./enemy.js";
 import { Bullet } from "./bullet.js";
 import { InputHandler } from "./input.js";
+import { EnemyBullet } from "./EnemyBullet.js";
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// 敵の最大数
-const MAX_ENEMIES = 5;
+const MAX_ENEMIES = 10;
 
 // オブジェクト管理
 const player = new Player(canvas.width / 2, canvas.height / 2, canvas);
