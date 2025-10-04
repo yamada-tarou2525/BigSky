@@ -1,4 +1,4 @@
-import { EnemyBullet } from "./EnemyBullet.js";
+import { EnemyBullet } from "./enemyBullet.js";
 
 export class Enemy {
   constructor(x, y, canvas) {
