@@ -171,6 +171,7 @@ function gameLoop() {
   bullets.forEach(b => b.draw(ctx));
   swords.forEach(s => s.draw(ctx));
   beams.forEach(bm => bm.draw(ctx));
+  enemyBullets.forEach(eb => eb.draw(ctx));
 
   // 🔋チャージエフェクト
   if (isCharging) {
@@ -202,8 +203,6 @@ window.addEventListener("keydown", e => {
   if (e.key === " ") {
     bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
   }
-
-  // 拡散ショット
   if (e.key === "Shift") {
     const spreadCount = 5;
     const spreadAngle = 10 * (Math.PI / 180);
@@ -295,7 +294,6 @@ window.addEventListener("keyup", e => {
       }
     }
   }
-
 });
 
 gameLoop();
