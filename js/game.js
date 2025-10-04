@@ -97,7 +97,7 @@ function checkCollisions() {
     const eb = enemyBullets[i];
     const dist = Math.hypot(player.x - eb.x, player.y - eb.y);
     if (dist < player.radius + eb.radius) {
-      if (!invincible) {   // ⭐ 無敵チェック
+      if (!invincible) {  //⭐ 無敵チェック
         isGameOver = true;
         break;
       }
@@ -139,14 +139,6 @@ function fireChargeShot(level) {
 // ------------------- ゲームループ -------------------
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // ⭐ 無敵トグル処理
-  const isCPressed = input.keys["c"] || input.keys["C"];
-  if (isCPressed && !lastCKey) {
-    invincible = !invincible;
-    console.log("無敵:", invincible);
-  }
-  lastCKey = isCPressed;
 
   if (!isGameOver) {
     player.update(input.keys);
@@ -196,6 +188,19 @@ function gameLoop() {
   beams.forEach(bm => bm.draw(ctx));
   enemyBullets.forEach(eb => eb.draw(ctx));
 
+  // ⭐ 無敵中のエフェクト（白いもや）
+  if (invincible) {
+    // プレイヤーの周りに白い光の輪を出す
+    const gradient = ctx.createRadialGradient(player.x, player.y, player.radius, player.x, player.y, player.radius * 4);
+    gradient.addColorStop(0, "rgba(255,255,255,0.5)");
+    gradient.addColorStop(1, "rgba(255,255,255,0)");
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, player.radius * 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   // 🔋チャージエフェクト
   if (isCharging) {
     const chargeTime = (Date.now() - chargeStartTime) / 1000;
@@ -221,6 +226,12 @@ function gameLoop() {
 // ------------------- キー入力 -------------------
 window.addEventListener("keydown", e => {
   if (isGameOver) return;
+
+  // ⭐ Cキーで無敵切り替え
+  if (e.key === "c" || e.key === "C") {
+    invincible = !invincible;
+    console.log("無敵:", invincible);
+  }
 
   // 通常ショット
   if (e.key === " ") bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
@@ -298,5 +309,7 @@ window.addEventListener("keyup", e => {
     }
   }
 });
+
+
 
 gameLoop();
