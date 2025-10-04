@@ -1,26 +1,26 @@
 export class ZigZagEnemy extends Enemy {
     constructor(x, y, canvas, speed = 2, amplitude = 50, frequency = 0.05) {
       super(x, y, canvas);
-      this.baseY = y;           // 基準Y座標
-      this.amplitude = amplitude; // 振幅
-      this.frequency = frequency; // 周波数
-      this.speed = speed;
+      this.startX = x;           // 横の基準位置
+      this.speed = speed;        // 縦の速度
+      this.amplitude = amplitude;
+      this.frequency = frequency;
       this.time = 0;
     }
   
     update(targetX, targetY) {
-      // 基本は下に向かう（例：y軸）
+      // 縦は通常通り下方向
       this.y += this.speed;
   
-      // 横方向にジグザグ
-      this.x = this.baseY + Math.sin(this.time * this.frequency) * this.amplitude;
+      // 横はジグザグ
+      this.x = this.startX + Math.sin(this.time * this.frequency) * this.amplitude;
   
       this.time++;
   
       // 画面外に出たらリセット
       if (this.y > this.canvas.height + this.radius) {
         this.y = -this.radius;
-        this.baseY = Math.random() * this.canvas.width;
+        this.startX = Math.random() * this.canvas.width;
       }
     }
   }
