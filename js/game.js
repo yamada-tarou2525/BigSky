@@ -2,6 +2,10 @@ import { Player } from "./player.js";
 import { Enemy } from "./enemy.js";
 import { Bullet } from "./bullet.js";
 import { InputHandler } from "./input.js";
+<<<<<<< HEAD
+=======
+import { EnemyBullet } from "./enemyBullet.js";
+>>>>>>> 699ba7c627c3c6a14c888e941deda30b19d5f086
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -98,12 +102,32 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
+<<<<<<< HEAD
 // スペースキーで弾を撃つ処理（連射制御は簡単に）
+=======
+// 🎯 単発弾（スペースキー）と拡散弾（Shiftキー）の撃ち分け
+>>>>>>> 699ba7c627c3c6a14c888e941deda30b19d5f086
 window.addEventListener("keydown", e => {
-  if (e.key === " " && !isGameOver) {
+  if (isGameOver) return;
+
+  // 単発ショット（スペースキー）
+  if (e.key === " ") {
     bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
   }
+
+  // 拡散ショット（Shiftキー）
+  if (e.key === "Shift") {
+    const spreadCount = 5; // 拡散弾の数（例：5発）
+    const spreadAngle = 10 * (Math.PI / 180); // 拡散角度（度→ラジアン）
+
+    for (let i = 0; i < spreadCount; i++) {
+      const offset = (i - Math.floor(spreadCount / 2)) * spreadAngle;
+      const angle = player.angle + offset;
+      bullets.push(new Bullet(player.x, player.y, angle, canvas));
+    }
+  }
 });
+
 
 gameLoop();
 
