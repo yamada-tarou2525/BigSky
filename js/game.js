@@ -9,7 +9,6 @@ const ctx = canvas.getContext("2d");
 
 const MAX_ENEMIES = 10;
 
-// オブジェクト管理
 const player = new Player(canvas.width / 2, canvas.height / 2, canvas);
 const enemies = [];
 const bullets = [];
@@ -17,24 +16,6 @@ const input = new InputHandler();
 
 let isGameOver = false;
 
-// ==========================
-// 🔹 拡散弾を撃つ関数
-// ==========================
-function shootSpread(x, y, angle, canvas) {
-  const spreadCount = 5; // 発射する弾の本数
-  const spreadAngle = 30 * (Math.PI / 180); // 全体の広がり角度（30度）
-
-  for (let i = 0; i < spreadCount; i++) {
-    // 左右対称に角度をずらす
-    const offset = (i - (spreadCount - 1) / 2) * (spreadAngle / (spreadCount - 1));
-    const bulletAngle = angle + offset;
-    bullets.push(new Bullet(x, y, bulletAngle, canvas));
-  }
-}
-
-// ==========================
-// 🔹 敵の生成
-// ==========================
 function spawnEnemy() {
   if (enemies.length >= MAX_ENEMIES) return;
 
@@ -61,11 +42,8 @@ function spawnEnemy() {
   enemies.push(new Enemy(x, y, canvas));
 }
 
-// ==========================
-// 🔹 当たり判定
-// ==========================
 function checkCollisions() {
-  // 弾と敵
+  // 弾と敵の当たり判定
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     for (let j = enemies.length - 1; j >= 0; j--) {
@@ -79,7 +57,7 @@ function checkCollisions() {
     }
   }
 
-  // 敵とプレイヤー
+  // 敵とプレイヤーの当たり判定
   for (const e of enemies) {
     const dist = Math.hypot(player.x - e.x, player.y - e.y);
     if (dist < player.radius + e.radius) {
@@ -89,9 +67,6 @@ function checkCollisions() {
   }
 }
 
-// ==========================
-// 🔹 ゲームループ
-// ==========================
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -99,11 +74,10 @@ function gameLoop() {
     player.update(input.keys);
     spawnEnemy();
 
-    // 敵と弾の更新
     enemies.forEach(e => e.update(player.x, player.y));
     bullets.forEach(b => b.update());
 
-    // 画面外の弾削除
+    // 画面外の弾を削除
     for (let i = bullets.length - 1; i >= 0; i--) {
       if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
     }
@@ -111,12 +85,10 @@ function gameLoop() {
     checkCollisions();
   }
 
-  // 描画
   player.draw(ctx);
   enemies.forEach(e => e.draw(ctx));
   bullets.forEach(b => b.draw(ctx));
 
-  // GAME OVER表示
   if (isGameOver) {
     ctx.fillStyle = "red";
     ctx.font = "bold 48px sans-serif";
@@ -127,16 +99,11 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// ==========================
-// 🔹 スペースキーで拡散弾発射
-// ==========================
+// スペースキーで弾を撃つ処理（連射制御は簡単に）
 window.addEventListener("keydown", e => {
   if (e.key === " " && !isGameOver) {
-    shootSpread(player.x, player.y, player.angle, canvas);
+    bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
   }
 });
 
-// ==========================
-// 🔹 ゲーム開始
-// ==========================
 gameLoop();
