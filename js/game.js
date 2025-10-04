@@ -102,11 +102,9 @@ function checkCollisions() {
   for (const e of enemies) {
     const dist = Math.hypot(player.x - e.x, player.y - e.y);
     if (dist < player.radius + e.radius) {
-        if (!player.isInvincible) {   // 無敵ならゲームオーバー無効
-          isGameOver = true;
-          break;
-        }
-      }
+      isGameOver = true;
+      break;
+    }
   }
 }
 
@@ -137,7 +135,6 @@ function gameLoop() {
 
   if (!isGameOver) {
     player.update(input.keys);
-    player.toggleInvincibility(input.keys); // ← 無敵切替チェック
     spawnEnemy();
 
     enemies.forEach(e => e.update(player.x, player.y));
@@ -288,11 +285,3 @@ window.addEventListener("keyup", e => {
 });
 
 gameLoop();
-
-
-
-
-
-
-
-
