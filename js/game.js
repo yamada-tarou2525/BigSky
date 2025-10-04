@@ -10,7 +10,7 @@ const MAX_ENEMIES = 5;
 
 const player = new Player(canvas.width / 2, canvas.height / 2, canvas);
 const enemies = [];
-const bullets = [];
+//const bullets = [];　ここ
 const input = new InputHandler();
 
 let isGameOver = false;
@@ -74,11 +74,17 @@ function gameLoop() {
     spawnEnemy();
 
     enemies.forEach(e => e.update(player.x, player.y));
-    bullets.forEach(b => b.update());
+    //bullets.forEach(b => b.update()); ここ
+    player.bullets.forEach(b => b.update());
 
     // 画面外の弾を削除
-    for (let i = bullets.length - 1; i >= 0; i--) {
-      if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
+                              //ここ
+    //for (let i = bullets.length - 1; i >= 0; i--) {
+      //if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
+    //}
+
+    for (let i = player.bullets.length - 1; i >= 0; i--) {
+        if (player.bullets[i].isOutOfBounds()) player.bullets.splice(i, 1);
     }
 
     checkCollisions();
@@ -86,7 +92,8 @@ function gameLoop() {
 
   player.draw(ctx);
   enemies.forEach(e => e.draw(ctx));
-  bullets.forEach(b => b.draw(ctx));
+  //bullets.forEach(b => b.draw(ctx));　ここ
+  player.bullets.forEach(b => b.draw(ctx));
 
   if (isGameOver) {
     ctx.fillStyle = "red";
@@ -101,7 +108,8 @@ function gameLoop() {
 // スペースキーで弾を撃つ処理（連射制御は簡単に）
 window.addEventListener("keydown", e => {
   if (e.key === " " && !isGameOver) {
-    bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
+    //bullets.push(new Bullet(player.x, player.y, player.angle, canvas));　ここ
+    player.bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
   }
 });
 

@@ -6,6 +6,7 @@ export class Player {
     this.speed = 5;
     this.canvas = canvas;
     this.radius = 10;
+    this.bullets = [];
   }
   update(keys) {
     let dx = 0, dy = 0;
