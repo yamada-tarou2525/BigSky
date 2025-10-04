@@ -28,6 +28,10 @@ let isCharging = false;
 let chargeStartTime = 0;
 let chargeLevel = 0;
 
+// ⭐ 無敵関連
+let invincible = false;
+let lastCKey = false;
+
 // ------------------- 敵生成 -------------------
 function spawnEnemy() {
   if (enemies.length >= MAX_ENEMIES) return;
@@ -93,17 +97,20 @@ function checkCollisions() {
     const eb = enemyBullets[i];
     const dist = Math.hypot(player.x - eb.x, player.y - eb.y);
     if (dist < player.radius + eb.radius) {
-      isGameOver = true;
-      break;
+      if (!invincible) {   // ⭐ 無敵チェック
+        isGameOver = true;
+        break;
+      }
     }
   }
-
   // 敵とプレイヤー
   for (const e of enemies) {
     const dist = Math.hypot(player.x - e.x, player.y - e.y);
     if (dist < player.radius + e.radius) {
-      isGameOver = true;
-      break;
+      if (!invincible) {   // ⭐ 無敵チェック
+        isGameOver = true;
+        break;
+      }
     }
   }
 }
@@ -132,6 +139,14 @@ function fireChargeShot(level) {
 // ------------------- ゲームループ -------------------
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // ⭐ 無敵トグル処理
+  const isCPressed = input.keys["c"] || input.keys["C"];
+  if (isCPressed && !lastCKey) {
+    invincible = !invincible;
+    console.log("無敵:", invincible);
+  }
+  lastCKey = isCPressed;
 
   if (!isGameOver) {
     player.update(input.keys);
