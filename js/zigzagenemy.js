@@ -9,8 +9,8 @@ export class ZigZagEnemy {
       
       // ジグザグ用
       this.angle = 0;          // 移動方向
-      this.zigzagAmplitude = 50; // ジグザグ幅
-      this.zigzagFrequency = 0.05; // ジグザグの速さ
+      this.zigzagAmplitude = 100; // ジグザグ幅 50
+      this.zigzagFrequency = 5; // ジグザグの速さ 0.05
       this.startX = x;         // 初期x座標
       this.t = 0;              // 時間パラメータ
     }
