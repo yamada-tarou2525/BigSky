@@ -6,7 +6,7 @@ import { InputHandler } from "./input.js";
 import { Sword } from "./sword.js";
 import { Beam } from "./beam.js";
 import { Explosion } from "./explosion.js";
-import {ZigZagEnemy} from "./zigzagenemy.js"
+import {ZigZagEnemy} from "./zigzagenemy.js"   //kokok
 
 
 
@@ -49,7 +49,7 @@ function spawnEnemy() {
 
   // 50%の確率でジグザグ敵にする
   if (Math.random() < 0.5) {
-    enemies.push(new ZigZagEnemy(x, y, canvas));
+    enemies.push(new ZigZagEnemy(x, y, canvas));   //ここｓｓｓｓｓｓｓｓｓｓｓｓｓｓｓ
   } else {
     enemies.push(new Enemy(x, y, canvas));
   }
