@@ -1,7 +1,7 @@
 import { Player } from "./player.js";
 import { Bullet } from "./bullet.js";
 
-export class Cheat extends player {
+export class Cheat extends Player {
   constructor(x, y, canvas) {
     super(x, y, canvas);
     this.cheatActive = false;   // チートON/OFFを管理するフラグ
