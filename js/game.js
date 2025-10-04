@@ -6,6 +6,9 @@ import { InputHandler } from "./input.js";
 import { Sword } from "./sword.js";
 import { Beam } from "./beam.js";
 import { Explosion } from "./explosion.js";
+import {ZigZagEnemy} from "./zigzagenemy.js"
+
+
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
@@ -43,7 +46,13 @@ function spawnEnemy() {
     case 2: x = 0; y = Math.random() * canvas.height; break;
     case 3: x = canvas.width; y = Math.random() * canvas.height; break;
   }
-  enemies.push(new Enemy(x, y, canvas));
+
+  // 50%の確率でジグザグ敵にする
+  if (Math.random() < 0.5) {
+    enemies.push(new ZigZagEnemy(x, y, canvas));
+  } else {
+    enemies.push(new Enemy(x, y, canvas));
+  }
 }
 
 // ------------------- 当たり判定 -------------------
