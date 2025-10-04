@@ -6,7 +6,7 @@ import { InputHandler } from "./input.js";
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-const MAX_ENEMIES = 10;
+const MAX_ENEMIES = 5;
 
 const player = new Player(canvas.width / 2, canvas.height / 2, canvas);
 const enemies = [];
