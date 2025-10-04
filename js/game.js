@@ -43,7 +43,7 @@ function spawnEnemy() {
 }
 
 function checkCollisions() {
-  // 弾と敵の当たり判定
+  // 弾と敵の当たり判定2
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     for (let j = enemies.length - 1; j >= 0; j--) {
