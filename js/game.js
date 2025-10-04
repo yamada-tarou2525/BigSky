@@ -44,6 +44,7 @@ function spawnEnemy() {
     case 3: x = canvas.width; y = Math.random() * canvas.height; break;
   }
   enemies.push(new Enemy(x, y, canvas));
+  enemies.push(new ZigZagEnemy(Math.random() * canvas.width, 0, canvas)); //ジグザグ処理
 }
 
 // ------------------- 当たり判定 -------------------
