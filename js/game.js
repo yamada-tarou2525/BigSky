@@ -24,6 +24,24 @@ let explosions = [];
 const input = new InputHandler();
 let isGameOver = false;
 
+// 最初の敵だけゲーム開始から2秒後に出現
+setTimeout(() => {
+  const edge = Math.floor(Math.random() * 4);
+  let x, y;
+  switch (edge) {
+    case 0: x = Math.random() * canvas.width; y = 0; break;
+    case 1: x = Math.random() * canvas.width; y = canvas.height; break;
+    case 2: x = 0; y = Math.random() * canvas.height; break;
+    case 3: x = canvas.width; y = Math.random() * canvas.height; break;
+  }
+
+  if (Math.random() < 0.5) {
+    enemies.push(new ZigZagEnemy(x, y, canvas));
+  } else {
+    enemies.push(new Enemy(x, y, canvas));
+  }
+}, 2000); // 2秒
+
 // 🔋チャージ関連
 let isCharging = false;
 let chargeStartTime = 0;
@@ -54,25 +72,6 @@ function spawnEnemy() {
     enemies.push(new Enemy(x, y, canvas));
   }
 }
-
-// ゲーム開始2秒後に最初の敵1体を出現
-setTimeout(() => {
-  const edge = Math.floor(Math.random() * 4);
-  let x, y;
-  switch (edge) {
-    case 0: x = Math.random() * canvas.width; y = 0; break;
-    case 1: x = Math.random() * canvas.width; y = canvas.height; break;
-    case 2: x = 0; y = Math.random() * canvas.height; break;
-    case 3: x = canvas.width; y = Math.random() * canvas.height; break;
-  }
-
-  if (Math.random() < 0.5) {
-    enemies.push(new ZigZagEnemy(x, y, canvas));
-  } else {
-    enemies.push(new Enemy(x, y, canvas));
-  }
-}, 2000); // 2000ms = 2秒
-
 
 // ------------------- 当たり判定 -------------------
 function checkCollisions() {
