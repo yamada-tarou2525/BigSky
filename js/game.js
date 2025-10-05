@@ -24,7 +24,7 @@ let explosions = [];
 
 let input = new InputHandler();
 let isGameOver = false;
-let isGameRunning = false; // Enterキーでスタート／停止
+let isGameRunning = false;
 let score = 0;
 
 // チャージ関連
@@ -34,6 +34,7 @@ let chargeLevel = 0;
 
 // 無敵
 let invincible = false;
+let invincibleEffectAlpha = 0;
 
 // キー連射防止
 const keyPressed = {};
@@ -57,6 +58,7 @@ function initGame() {
   score = 0;
   isGameOver = false;
   invincible = false;
+  invincibleEffectAlpha = 0;
   ubwActive = false;
   ubwSwords = [];
   ubwFade = 0;
@@ -161,7 +163,7 @@ function fireChargeShot(level) {
   }
 }
 
-// ------------------- 瞬間移動 -------------------
+// ------------------- ダッシュ -------------------
 function dashForward(distance = 100) {
   player.x += Math.cos(player.angle) * distance;
   player.y += Math.sin(player.angle) * distance;
@@ -245,21 +247,29 @@ function drawUBW(ctx) {
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // STARBLADEX ロゴ
   ctx.save();
-  ctx.strokeStyle = `rgba(255,255,255,${0.2 * ubwFade})`;
-  ctx.lineWidth = 2;
-  for (let i = 0; i < 6; i++) {
-    const r = 80 + i * 50;
-    ctx.beginPath();
-    for (let j = 0; j < 12; j++) {
-      const angle = (Math.PI * 2 * j) / 12;
-      const x = canvas.width / 2 + Math.cos(angle) * r;
-      const y = canvas.height / 2 + Math.sin(angle) * r;
-      ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.stroke();
-  }
+  const pulse = Math.sin(Date.now() / 200) * 0.5 + 0.5;
+  const glow = 0.4 + pulse * 0.6;
+  const fontSize = 100 + pulse * 10;
+  const gradientText = ctx.createLinearGradient(
+    canvas.width / 2 - 200,
+    canvas.height / 2 - 100,
+    canvas.width / 2 + 200,
+    canvas.height / 2 + 100
+  );
+  gradientText.addColorStop(0, `rgba(255,200,50,${glow * ubwFade})`);
+  gradientText.addColorStop(0.5, `rgba(255,255,255,${glow * ubwFade})`);
+  gradientText.addColorStop(1, `rgba(255,50,50,${glow * ubwFade})`);
+
+  ctx.font = `bold ${fontSize}px "Orbitron", sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.strokeStyle = `rgba(255,255,255,${0.8 * ubwFade})`;
+  ctx.lineWidth = 4;
+  ctx.strokeText("StarBladeX", canvas.width / 2, canvas.height / 2);
+  ctx.fillStyle = gradientText;
+  ctx.fillText("StarBladeX", canvas.width / 2, canvas.height / 2);
   ctx.restore();
 
   ubwSwords.forEach(s => s.draw(ctx));
@@ -290,23 +300,37 @@ function gameLoop() {
     explosions.forEach(ex => ex.update());
 
     explosions = explosions.filter(ex => ex.active);
-
-    for (let i = bullets.length - 1; i >= 0; i--) if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
-    for (let i = swords.length - 1; i >= 0; i--) if (swords[i].isOutOfBounds()) swords.splice(i, 1);
-    for (let i = enemyBullets.length - 1; i >= 0; i--) if (enemyBullets[i].isOutOfBounds()) enemyBullets.splice(i, 1);
-
-    for (let i = beams.length - 1; i >= 0; i--) {
-      if (beams[i].life !== undefined) {
-        beams[i].life--;
-        if (beams[i].life <= 0) beams.splice(i, 1);
-      }
-    }
+    bullets = bullets.filter(b => !b.isOutOfBounds());
+    swords = swords.filter(s => !s.isOutOfBounds());
+    enemyBullets = enemyBullets.filter(eb => !eb.isOutOfBounds());
+    beams = beams.filter(bm => (bm.life === undefined ? true : --bm.life > 0));
 
     updateUBW();
     checkCollisions();
   }
 
+  // プレイヤー & エフェクト
   player?.draw(ctx);
+
+  // 🌟無敵エフェクト描画
+  if (invincible) {
+    invincibleEffectAlpha = Math.min(invincibleEffectAlpha + 0.05, 1);
+  } else {
+    invincibleEffectAlpha = Math.max(invincibleEffectAlpha - 0.05, 0);
+  }
+
+  if (invincibleEffectAlpha > 0 && player) {
+    const time = Date.now() / 200;
+    const waveRadius = player.radius * (3 + Math.sin(time) * 0.5);
+    const gradient = ctx.createRadialGradient(player.x, player.y, player.radius, player.x, player.y, waveRadius);
+    gradient.addColorStop(0, `rgba(255,255,255,${0.4 * invincibleEffectAlpha})`);
+    gradient.addColorStop(1, `rgba(255,255,255,0)`);
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, waveRadius, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   explosions.forEach(ex => ex.draw(ctx));
   enemies.forEach(e => e.draw(ctx));
   bullets.forEach(b => b.draw(ctx));
@@ -314,17 +338,7 @@ function gameLoop() {
   beams.forEach(bm => bm.draw(ctx));
   enemyBullets.forEach(eb => eb.draw(ctx));
 
-  if (invincible && player) {
-    const gradient = ctx.createRadialGradient(player.x, player.y, player.radius, player.x, player.y, player.radius * 4);
-    gradient.addColorStop(0, "rgba(255,255,255,0.5)");
-    gradient.addColorStop(1, "rgba(255,255,255,0)");
-    ctx.fillStyle = gradient;
-    ctx.beginPath();
-    ctx.arc(player.x, player.y, player.radius * 4, 0, Math.PI * 2);
-    ctx.fill();
-  }
-
-  // スコア描画
+  // スコア
   ctx.fillStyle = "white";
   ctx.font = "20px monospace";
   ctx.textAlign = "left";
@@ -350,7 +364,7 @@ window.addEventListener("keydown", (e) => {
       initGame();
       isGameRunning = true;
     } else {
-      isGameRunning = !isGameRunning; // 一時停止
+      isGameRunning = !isGameRunning;
     }
   }
 
@@ -358,18 +372,14 @@ window.addEventListener("keydown", (e) => {
   if (keyPressed[e.key]) return;
   keyPressed[e.key] = true;
 
-  // 移動
   if (e.key === "a" || e.key === "A") dashForward();
   if (e.key === "s" || e.key === "S") dashBackward();
   if (e.key === "d" || e.key === "D") dashDiagonal();
 
-  // 無敵
   if (e.key === "c" || e.key === "C") invincible = !invincible;
 
-  // 弾
   if (e.key === " ") bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
 
-  // 拡散弾
   if (e.key === "Shift") {
     const spreadCount = 5;
     const spreadAngle = 10 * (Math.PI / 180);
@@ -377,7 +387,6 @@ window.addEventListener("keydown", (e) => {
       bullets.push(new Bullet(player.x, player.y, player.angle + (i - 2) * spreadAngle, canvas));
   }
 
-  // 剣
   if (e.key === "z" || e.key === "Z") {
     const swordCount = 5;
     const randomRange = Math.PI / 3;
@@ -387,12 +396,10 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
-  // ビーム
   if (e.key === "x" || e.key === "X") {
-    beams.push(new Beam(player.x, player.y, player.angle, canvas, { color: "lime", width: 6, length: 500, duration: 20 }));
+    beams.push(new Beam(player.x, player.y, player.angle, canvas, { color: "lime", width: 6, length: 500, life: 20 }));
   }
 
-  // ビームスプレッド
   if (e.key === "v" || e.key === "V") {
     const count = 8;
     const spread = (Math.PI * 2) / count;
@@ -404,7 +411,6 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
-  // 剣スプレッド
   if (e.key === "b" || e.key === "B") {
     const count = 12;
     const spread = (Math.PI * 2) / count;
@@ -413,13 +419,11 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
-  // チャージショット
   if ((e.key === "n" || e.key === "N") && !isCharging) {
     isCharging = true;
     chargeStartTime = Date.now();
   }
 
-  // 爆発
   if (e.key === "m" || e.key === "M") {
     explosions.push(new Explosion(player.x, player.y));
     const blastRadius = 150;
@@ -432,26 +436,31 @@ window.addEventListener("keydown", (e) => {
     }
   }
 
-  // UBW
   if (e.key === "u" || e.key === "U") activateUBW();
 });
 
 window.addEventListener("keyup", (e) => {
   keyPressed[e.key] = false;
-
-  if ((e.key === "n" || e.key === "N") && isCharging) {
+  if (e.key === "n" || e.key === "N") {
     isCharging = false;
-    const elapsed = (Date.now() - chargeStartTime) / 1000;
-    chargeLevel = elapsed < 1 ? 1 : elapsed < 2 ? 2 : 3;
+    chargeLevel = Math.min(3, Math.floor((Date.now() - chargeStartTime) / 1000) + 1);
     fireChargeShot(chargeLevel);
   }
 });
 
-// ゲームループ1回だけ開始
 gameLoop();
 
-// 🎯 外部から呼べるようにエクスポート
 export function startGame() {
   initGame();
   isGameRunning = true;
 }
+
+
+
+
+
+
+
+
+
+
