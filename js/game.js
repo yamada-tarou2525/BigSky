@@ -24,7 +24,7 @@ let explosions = [];
 const input = new InputHandler();
 let isGameOver = false;
 
-// 最初の敵だけゲーム開始から2秒後に出現
+// 最初の敵スポーン
 setTimeout(() => {
   const edge = Math.floor(Math.random() * 4);
   let x, y;
@@ -35,12 +35,9 @@ setTimeout(() => {
     case 3: x = canvas.width; y = Math.random() * canvas.height; break;
   }
 
-  if (Math.random() < 0.5) {
-    enemies.push(new ZigZagEnemy(x, y, canvas));
-  } else {
-    enemies.push(new Enemy(x, y, canvas));
-  }
-}, 50000); // 2秒
+  if (Math.random() < 0.5) enemies.push(new ZigZagEnemy(x, y, canvas));
+  else enemies.push(new Enemy(x, y, canvas));
+}, 2000); // 2秒後出現
 
 // 🔋チャージ関連
 let isCharging = false;
@@ -50,7 +47,7 @@ let chargeLevel = 0;
 // ⭐ 無敵関連
 let invincible = false;
 
-// 🎯 連射防止フラグ
+// 🎯 連射防止
 const keyPressed = {};
 
 // ------------------- 敵生成 -------------------
@@ -64,13 +61,8 @@ function spawnEnemy() {
     case 2: x = 0; y = Math.random() * canvas.height; break;
     case 3: x = canvas.width; y = Math.random() * canvas.height; break;
   }
-
-  // 50%の確率でジグザグ敵にする
-  if (Math.random() < 0.5) {
-    enemies.push(new ZigZagEnemy(x, y, canvas));
-  } else {
-    enemies.push(new Enemy(x, y, canvas));
-  }
+  if (Math.random() < 0.5) enemies.push(new ZigZagEnemy(x, y, canvas));
+  else enemies.push(new Enemy(x, y, canvas));
 }
 
 // ------------------- 当たり判定 -------------------
@@ -84,6 +76,7 @@ function checkCollisions() {
       if (dist < b.radius + e.radius) {
         bullets.splice(i, 1);
         enemies.splice(j, 1);
+        explosions.push(new Explosion(e.x, e.y));
         break;
       }
     }
@@ -97,6 +90,7 @@ function checkCollisions() {
       const dist = Math.hypot(s.x - e.x, s.y - e.y);
       if (dist < s.length / 2 + e.radius) {
         enemies.splice(j, 1);
+        explosions.push(new Explosion(e.x, e.y));
       }
     }
   }
@@ -114,6 +108,7 @@ function checkCollisions() {
         const perpDist = Math.abs(-beamDirY * dx + beamDirX * dy);
         if (perpDist < e.radius + bm.width / 2) {
           enemies.splice(j, 1);
+          explosions.push(new Explosion(e.x, e.y));
         }
       }
     }
@@ -124,10 +119,7 @@ function checkCollisions() {
     const eb = enemyBullets[i];
     const dist = Math.hypot(player.x - eb.x, player.y - eb.y);
     if (dist < player.radius + eb.radius) {
-      if (!invincible) {
-        isGameOver = true;
-        break;
-      }
+      if (!invincible) isGameOver = true;
     }
   }
 
@@ -135,10 +127,7 @@ function checkCollisions() {
   for (const e of enemies) {
     const dist = Math.hypot(player.x - e.x, player.y - e.y);
     if (dist < player.radius + e.radius) {
-      if (!invincible) {
-        isGameOver = true;
-        break;
-      }
+      if (!invincible) isGameOver = true;
     }
   }
 }
@@ -148,23 +137,16 @@ function fireChargeShot(level) {
   const x = player.x;
   const y = player.y;
   const angle = player.angle;
-
   if (level === 1) {
-    bullets.push(new Bullet(x, y, angle, canvas, {
-      speed: 10, radius: 5, color: "white"
-    }));
+    bullets.push(new Bullet(x, y, angle, canvas, { speed: 10, radius: 5, color: "white" }));
   } else if (level === 2) {
-    bullets.push(new Bullet(x, y, angle, canvas, {
-      speed: 14, radius: 10, color: "yellow"
-    }));
+    bullets.push(new Bullet(x, y, angle, canvas, { speed: 14, radius: 10, color: "yellow" }));
   } else if (level === 3) {
-    beams.push(new Beam(x, y, angle, canvas, {
-      color: "orange", width: 10, length: 500, life: 60
-    }));
+    beams.push(new Beam(x, y, angle, canvas, { color: "orange", width: 10, length: 500, life: 60 }));
   }
 }
 
-// ------------------- 瞬間移動（ダッシュ） -------------------
+// ------------------- 瞬間移動 -------------------
 function dashForward(distance = 100) {
   player.x += Math.cos(player.angle) * distance;
   player.y += Math.sin(player.angle) * distance;
@@ -176,31 +158,122 @@ function dashBackward(distance = 100) {
   clampPlayerPosition();
 }
 function dashDiagonal(distance = 100) {
-  const dir = Math.random() < 0.5 ? 1 : -1; // 前か後ろ
-  const offsetAngle = (Math.random() - 0.5) * (Math.PI / 2); // ±45°
+  const dir = Math.random() < 0.5 ? 1 : -1;
+  const offsetAngle = (Math.random() - 0.5) * (Math.PI / 2);
   const angle = player.angle + offsetAngle;
   player.x += Math.cos(angle) * distance * dir;
   player.y += Math.sin(angle) * distance * dir;
   clampPlayerPosition();
 }
-
-// キャンバス外に出ないように補正
 function clampPlayerPosition() {
   player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
   player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+}
+
+// ===================== UBW（アンリミテッド・ブレイド・ワークス） =====================
+let ubwActive = false;
+let ubwTimer = 0;
+let ubwDuration = 300; // 5秒
+let ubwSwords = [];
+let ubwFade = 0;
+
+function activateUBW() {
+  if (ubwActive) return;
+  ubwActive = true;
+  ubwTimer = ubwDuration;
+  ubwFade = 0;
+
+  const swordCount = 50;
+  for (let i = 0; i < swordCount; i++) {
+    const angle = (Math.PI * 2 * i) / swordCount;
+    const dist = 100 + Math.random() * 200;
+    const x = player.x + Math.cos(angle) * dist;
+    const y = player.y + Math.sin(angle) * dist;
+    const sword = new Sword(x, y, angle, canvas, {
+      color: "gold",
+      speed: 0,
+      length: 50,
+      width: 6,
+      homing: true,
+      turnSpeed: 0.08,
+    });
+    ubwSwords.push(sword);
+  }
+}
+
+function updateUBW() {
+  if (!ubwActive) return;
+
+  ubwTimer--;
+  ubwFade = Math.min(1, ubwFade + 0.02);
+
+  ubwSwords.forEach(s => s.update(enemies));
+
+  // 衝突処理
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+    for (let s of ubwSwords) {
+      const dist = Math.hypot(s.x - e.x, s.y - e.y);
+      if (dist < e.radius + s.length / 2) {
+        explosions.push(new Explosion(e.x, e.y));
+        enemies.splice(i, 1);
+        break;
+      }
+    }
+  }
+
+  if (ubwTimer <= 0) {
+    ubwActive = false;
+    ubwSwords = [];
+    ubwFade = 0;
+  }
+}
+
+function drawUBW(ctx) {
+  if (!ubwActive) return;
+
+  // 背景
+  const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  grd.addColorStop(0, `rgba(255, 80, 80, ${0.6 * ubwFade})`);
+  grd.addColorStop(1, `rgba(50, 0, 0, ${0.8 * ubwFade})`);
+  ctx.fillStyle = grd;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 歯車（雰囲気用）
+  ctx.save();
+  ctx.strokeStyle = `rgba(255,255,255,${0.2 * ubwFade})`;
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 6; i++) {
+    const r = 80 + i * 50;
+    ctx.beginPath();
+    for (let j = 0; j < 12; j++) {
+      const angle = (Math.PI * 2 * j) / 12;
+      const x = canvas.width / 2 + Math.cos(angle) * r;
+      const y = canvas.height / 2 + Math.sin(angle) * r;
+      ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // 剣描画
+  ubwSwords.forEach(s => s.draw(ctx));
+
+  // ✅ 背景文字削除済み！
 }
 
 // ------------------- ゲームループ -------------------
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  drawUBW(ctx); // 背景先に描画
+
   if (!isGameOver) {
     player.update(input.keys);
     spawnEnemy();
 
     enemies.forEach(e => e.update(player.x, player.y));
-
-    // 敵の攻撃
     enemies.forEach(e => {
       if (Math.random() < 0.02) {
         const angle = Math.atan2(player.y - e.y, player.x - e.x);
@@ -214,10 +287,9 @@ function gameLoop() {
     enemyBullets.forEach(eb => eb.update());
     explosions.forEach(ex => ex.update());
 
-    // 爆発を破壊的に更新
     explosions = explosions.filter(ex => ex.active);
 
-    // 画面外・寿命処理
+    // 画面外削除
     for (let i = bullets.length - 1; i >= 0; i--) if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
     for (let i = swords.length - 1; i >= 0; i--) if (swords[i].isOutOfBounds()) swords.splice(i, 1);
     for (let i = enemyBullets.length - 1; i >= 0; i--) if (enemyBullets[i].isOutOfBounds()) enemyBullets.splice(i, 1);
@@ -230,10 +302,10 @@ function gameLoop() {
       }
     }
 
+    updateUBW();
     checkCollisions();
   }
 
-  // ------------------- 描画 -------------------
   player.draw(ctx);
   explosions.forEach(ex => ex.draw(ctx));
   enemies.forEach(e => e.draw(ctx));
@@ -242,7 +314,6 @@ function gameLoop() {
   beams.forEach(bm => bm.draw(ctx));
   enemyBullets.forEach(eb => eb.draw(ctx));
 
-  // ⭐ 無敵中のエフェクト
   if (invincible) {
     const gradient = ctx.createRadialGradient(player.x, player.y, player.radius, player.x, player.y, player.radius * 4);
     gradient.addColorStop(0, "rgba(255,255,255,0.5)");
@@ -253,7 +324,7 @@ function gameLoop() {
     ctx.fill();
   }
 
-  // 🔋チャージエフェクト
+  // チャージエフェクト
   if (isCharging) {
     const chargeTime = (Date.now() - chargeStartTime) / 1000;
     const ratio = Math.min(chargeTime / 2, 1);
@@ -281,18 +352,14 @@ window.addEventListener("keydown", e => {
   if (keyPressed[e.key]) return;
   keyPressed[e.key] = true;
 
-  // 瞬間移動系
   if (e.key === "a" || e.key === "A") dashForward();
   if (e.key === "s" || e.key === "S") dashBackward();
   if (e.key === "d" || e.key === "D") dashDiagonal();
 
-  // C：無敵切り替え
   if (e.key === "c" || e.key === "C") invincible = !invincible;
 
-  // Space：通常ショット
   if (e.key === " ") bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
 
-  // Shift：拡散ショット
   if (e.key === "Shift") {
     const spreadCount = 5;
     const spreadAngle = 10 * (Math.PI / 180);
@@ -300,7 +367,6 @@ window.addEventListener("keydown", e => {
       bullets.push(new Bullet(player.x, player.y, player.angle + (i - 2) * spreadAngle, canvas));
   }
 
-  // Z：剣
   if (e.key === "z" || e.key === "Z") {
     const swordCount = 5;
     const randomRange = Math.PI / 3;
@@ -310,12 +376,10 @@ window.addEventListener("keydown", e => {
     }
   }
 
-  // X：ビーム
   if (e.key === "x" || e.key === "X") {
     beams.push(new Beam(player.x, player.y, player.angle, canvas, { color: "lime", width: 6, length: 500, duration: 20 }));
   }
 
-  // V：8方向ビーム
   if (e.key === "v" || e.key === "V") {
     const count = 8;
     const spread = (Math.PI * 2) / count;
@@ -327,7 +391,6 @@ window.addEventListener("keydown", e => {
     }
   }
 
-  // B：ホーミング剣
   if (e.key === "b" || e.key === "B") {
     const count = 12;
     const spread = (Math.PI * 2) / count;
@@ -336,13 +399,11 @@ window.addEventListener("keydown", e => {
     }
   }
 
-  // N：チャージ開始
   if ((e.key === "n" || e.key === "N") && !isCharging) {
     isCharging = true;
     chargeStartTime = Date.now();
   }
 
-  // M：爆発攻撃
   if (e.key === "m" || e.key === "M") {
     explosions.push(new Explosion(player.x, player.y));
     const blastRadius = 150;
@@ -351,24 +412,28 @@ window.addEventListener("keydown", e => {
       if (Math.hypot(player.x - e.x, player.y - e.y) < blastRadius) enemies.splice(i, 1);
     }
   }
+
+  // 🔥 UBW発動
+  if (e.key === "u" || e.key === "U") activateUBW();
 });
 
 window.addEventListener("keyup", e => {
   keyPressed[e.key] = false;
 
-  // Nキー離す → チャージショット発射
   if (e.key === "n" || e.key === "N") {
     if (isCharging) {
       isCharging = false;
-      const chargeTime = (Date.now() - chargeStartTime) / 1000;
-      if (chargeTime < 0.7) chargeLevel = 1;
-      else if (chargeTime < 1.4) chargeLevel = 2;
-      else chargeLevel = 3;
+      const elapsed = (Date.now() - chargeStartTime) / 1000;
+      chargeLevel = elapsed < 1 ? 1 : elapsed < 2 ? 2 : 3;
       fireChargeShot(chargeLevel);
     }
   }
 });
 
 gameLoop();
+
+
+
+
 
 
