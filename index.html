@@ -5,13 +5,25 @@
 <title>2Dシューティングゲーム（分割版）</title>
 <style>
   body {
-    background: #000;
-    color: #fff;
-    font-family: sans-serif;
-    text-align: center;
-    margin: 0; padding: 0;
-    user-select: none;
-  }
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  color: #fff;
+  text-align: center;
+  user-select: none;
+  height: 100vh;
+
+  /* 左右に寄せた宇宙空間のグラデーション */
+  background: 
+    radial-gradient(circle at 20% 50%, #001144, transparent 50%),
+    radial-gradient(circle at 80% 50%, #440022, transparent 50%),
+    #000000; /* 全体の暗さ */
+  background-blend-mode: screen;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+
   canvas {
     background: #111;
     display: block;
