@@ -31,10 +31,9 @@ export class Player {
   }
 
   draw(ctx) {
+    // 本体（青い三角形）
     ctx.fillStyle = "blue";
     ctx.beginPath();
-
-    // △形の頂点を計算
     ctx.moveTo(
       this.x + Math.cos(this.angle) * this.radius * 1.5,
       this.y + Math.sin(this.angle) * this.radius * 1.5
@@ -50,9 +49,30 @@ export class Player {
     ctx.closePath();
     ctx.fill();
 
-    // 輪郭を描く（オプション）
+    // 輪郭
     ctx.strokeStyle = "white";
     ctx.lineWidth = 2;
     ctx.stroke();
+
+    // 発射口（中央）
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.arc(
+      this.x + Math.cos(this.angle) * this.radius * 1.5,
+      this.y + Math.sin(this.angle) * this.radius * 1.5,
+      3, 0, Math.PI * 2
+    );
+    ctx.fill();
+
+    // 発射口（両翼：副砲）
+    for (let offset of [Math.PI/2.5, -Math.PI/2.5]) {
+      ctx.beginPath();
+      ctx.arc(
+        this.x + Math.cos(this.angle + offset) * this.radius,
+        this.y + Math.sin(this.angle + offset) * this.radius,
+        3, 0, Math.PI * 2
+      );
+      ctx.fill();
+    }
   }
 }
