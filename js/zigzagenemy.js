@@ -3,7 +3,7 @@ export class ZigZagEnemy {
     this.x = x;
     this.y = y;
     this.canvas = canvas;
-    this.radius = 15;
+    this.radius = 15; // 当たり判定はこのまま
     this.speed = 2;
 
     // ジグザグ用
@@ -12,12 +12,11 @@ export class ZigZagEnemy {
     this.t = 0;
     this.prevX = x;
     this.prevY = y;
-    this.angle = 0;  // 移動方向（描画用）
+    this.angle = 0;
   }
 
   update(playerX, playerY) {
     this.t += 1;
-
     this.prevX = this.x;
     this.prevY = this.y;
 
@@ -44,45 +43,43 @@ export class ZigZagEnemy {
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
 
-    // === 本体（悪の宇宙船） ===
-    // 機体グラデーション
+    // === 本体 ===
     const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius);
-    grad.addColorStop(0, "#ff4444"); // 中央赤
-    grad.addColorStop(0.7, "#880000"); // 外側濃い赤
-    grad.addColorStop(1, "#330000"); // 端を暗く
+    grad.addColorStop(0, "#ff4444");
+    grad.addColorStop(0.7, "#880000");
+    grad.addColorStop(1, "#330000");
     ctx.fillStyle = grad;
 
     ctx.beginPath();
-    ctx.moveTo(this.radius, 0);            // 機首
-    ctx.lineTo(-this.radius * 0.6, -this.radius * 0.7);  // 左翼
-    ctx.lineTo(-this.radius * 0.3, -this.radius * 0.2);  
-    ctx.lineTo(-this.radius * 0.3, this.radius * 0.2);   
-    ctx.lineTo(-this.radius * 0.6, this.radius * 0.7);   // 右翼
+    ctx.moveTo(this.radius, 0);                    // 機首
+    ctx.lineTo(-this.radius * 0.7, -this.radius); // 左翼
+    ctx.lineTo(-this.radius * 0.35, -this.radius * 0.3);
+    ctx.lineTo(-this.radius * 0.35, this.radius * 0.3);
+    ctx.lineTo(-this.radius * 0.7, this.radius);  // 右翼
     ctx.closePath();
     ctx.fill();
 
-    // === ハイライト（光沢感） ===
+    // === ハイライト ===
     ctx.strokeStyle = "orange";
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(this.radius * 0.2, -this.radius * 0.1);
+    ctx.moveTo(this.radius * 0.3, -this.radius * 0.15);
     ctx.lineTo(this.radius * 0.8, 0);
     ctx.stroke();
-
     ctx.beginPath();
-    ctx.moveTo(this.radius * 0.2, this.radius * 0.1);
+    ctx.moveTo(this.radius * 0.3, this.radius * 0.15);
     ctx.lineTo(this.radius * 0.8, 0);
     ctx.stroke();
 
-    // === 機首に光る目（オレンジ） ===
+    // === 機首の光る目 ===
     ctx.fillStyle = "orange";
     ctx.beginPath();
-    ctx.arc(this.radius, 0, 3, 0, Math.PI * 2);
+    ctx.arc(this.radius, 0, 4, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
 
-    // === 移動方向線（デバッグ／残すなら） ===
+    // 移動方向線（オプション）
     /*
     ctx.strokeStyle = "white";
     ctx.lineWidth = 2;
@@ -96,4 +93,3 @@ export class ZigZagEnemy {
     */
   }
 }
-
