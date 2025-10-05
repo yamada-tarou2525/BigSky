@@ -24,6 +24,9 @@ let explosions = [];
 const input = new InputHandler();
 let isGameOver = false;
 
+// 追加
+let gameStarted = false;
+
 // 最初の敵スポーン
 setTimeout(() => {
   const edge = Math.floor(Math.random() * 4);
@@ -269,42 +272,43 @@ function gameLoop() {
 
   drawUBW(ctx); // 背景先に描画
 
-  if (!isGameOver) {
-    player.update(input.keys);
-    spawnEnemy();
+  if (!isGameOver && gameStarted) {
+  player.update(input.keys);
+  spawnEnemy();
 
-    enemies.forEach(e => e.update(player.x, player.y));
-    enemies.forEach(e => {
-      if (Math.random() < 0.02) {
-        const angle = Math.atan2(player.y - e.y, player.x - e.x);
-        enemyBullets.push(new EnemyBullet(e.x, e.y, angle, canvas));
-      }
-    });
-
-    bullets.forEach(b => b.update());
-    swords.forEach(s => s.update(enemies));
-    beams.forEach(bm => bm.update());
-    enemyBullets.forEach(eb => eb.update());
-    explosions.forEach(ex => ex.update());
-
-    explosions = explosions.filter(ex => ex.active);
-
-    // 画面外削除
-    for (let i = bullets.length - 1; i >= 0; i--) if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
-    for (let i = swords.length - 1; i >= 0; i--) if (swords[i].isOutOfBounds()) swords.splice(i, 1);
-    for (let i = enemyBullets.length - 1; i >= 0; i--) if (enemyBullets[i].isOutOfBounds()) enemyBullets.splice(i, 1);
-
-    // ビーム寿命
-    for (let i = beams.length - 1; i >= 0; i--) {
-      if (beams[i].life !== undefined) {
-        beams[i].life--;
-        if (beams[i].life <= 0) beams.splice(i, 1);
-      }
+  enemies.forEach(e => e.update(player.x, player.y));
+  enemies.forEach(e => {
+    if (Math.random() < 0.02) {
+      const angle = Math.atan2(player.y - e.y, player.x - e.x);
+      enemyBullets.push(new EnemyBullet(e.x, e.y, angle, canvas));
     }
+  });
 
-    updateUBW();
-    checkCollisions();
+  bullets.forEach(b => b.update());
+  swords.forEach(s => s.update(enemies));
+  beams.forEach(bm => bm.update());
+  enemyBullets.forEach(eb => eb.update());
+  explosions.forEach(ex => ex.update());
+
+  explosions = explosions.filter(ex => ex.active);
+
+  // 画面外削除
+  for (let i = bullets.length - 1; i >= 0; i--) if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
+  for (let i = swords.length - 1; i >= 0; i--) if (swords[i].isOutOfBounds()) swords.splice(i, 1);
+  for (let i = enemyBullets.length - 1; i >= 0; i--) if (enemyBullets[i].isOutOfBounds()) enemyBullets.splice(i, 1);
+
+  // ビーム寿命
+  for (let i = beams.length - 1; i >= 0; i--) {
+    if (beams[i].life !== undefined) {
+      beams[i].life--;
+      if (beams[i].life <= 0) beams.splice(i, 1);
+    }
   }
+
+  updateUBW();
+  checkCollisions();
+}
+
 
   player.draw(ctx);
   explosions.forEach(ex => ex.draw(ctx));
@@ -430,7 +434,16 @@ window.addEventListener("keyup", e => {
   }
 });
 
-gameLoop();
+const startButton = document.getElementById("startButton");
+
+startButton.addEventListener("click", () => {
+  if (!gameStarted) {
+    gameStarted = true;
+    startButton.style.display = "none"; // ボタン非表示
+    gameLoop(); // ゲームループ開始
+  }
+});
+
 
 
 
