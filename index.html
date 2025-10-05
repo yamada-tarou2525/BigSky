@@ -2,72 +2,50 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<title>2Dシューティングゲーム（分割版）</title>
+<title>2Dシューティングゲーム（Enterキー版）</title>
 <style>
   body {
-  margin: 0;
-  padding: 0;
-  font-family: sans-serif;
-  color: #fff;
-  text-align: center;
-  user-select: none;
-  height: 100vh;
-
-  /* 左右に寄せた宇宙空間のグラデーション */
-  background: 
-    radial-gradient(circle at 20% 50%, #001144, transparent 50%),
-    radial-gradient(circle at 80% 50%, #440022, transparent 50%),
-    #000000; /* 全体の暗さ */
-  background-blend-mode: screen;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-
-
+    background: #000;
+    color: #fff;
+    font-family: sans-serif;
+    text-align: center;
+    margin: 0; padding: 0;
+    user-select: none;
+  }
   canvas {
     background: #111;
     display: block;
     margin: 20px auto;
     border: 2px solid #444;
   }
-  #startScreen {
+  #info {
     position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-  }
-  #startScreen button {
-    font-size: 1.2em;
-    padding: 10px 30px;
-    background: #444;
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
+    bottom: 10px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-family: monospace;
+    font-size: 16px;
+    color: #ccc;
   }
 </style>
 </head>
 <body>
-<h1>2Dシューティングゲーム（分割版）</h1>
+<h1>2Dシューティングゲーム（Enterキーで操作）</h1>
 <canvas id="gameCanvas" width="800" height="600"></canvas>
+<div id="info">
+  ENTER: ゲーム開始 / 一時停止<br>
 
-<div id="startScreen">
-  <h1>2Dシューティングゲーム</h1>
-  <p>Enterキーを押してスタート / 終了</p>
 </div>
-
 
 <script type="module">
   import { startGame } from "./js/game.js";
-  const startScreen = document.getElementById("startScreen");
-  document.getElementById("startButton").addEventListener("click", () => {
-    startScreen.style.display = "none";
-    startGame(); // 🎯 ゲーム開始！
+
+  // Enterキーでゲーム開始／一時停止
+  window.addEventListener("keydown", e => {
+    if (e.key === "Enter") {
+      startGame();
+    }
   });
 </script>
 </body>
