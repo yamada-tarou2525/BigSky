@@ -14,6 +14,7 @@ const ctx = canvas.getContext("2d");
 
 const MAX_ENEMIES = 10;
 
+// プレイヤー、敵、弾、エフェクトなど
 const player = new Player(canvas.width / 2, canvas.height / 2, canvas);
 const enemies = [];
 const bullets = [];
@@ -24,24 +25,8 @@ let explosions = [];
 
 const input = new InputHandler();
 let isGameOver = false;
-
-// 🎯 スコア関連
+let isGameRunning = false; // ゲームが動作中か
 let score = 0;
-
-// 最初の敵スポーン
-setTimeout(() => {
-  const edge = Math.floor(Math.random() * 4);
-  let x, y;
-  switch (edge) {
-    case 0: x = Math.random() * canvas.width; y = 0; break;
-    case 1: x = Math.random() * canvas.width; y = canvas.height; break;
-    case 2: x = 0; y = Math.random() * canvas.height; break;
-    case 3: x = canvas.width; y = Math.random() * canvas.height; break;
-  }
-
-  if (Math.random() < 0.5) enemies.push(new ZigZagEnemy(x, y, canvas));
-  else enemies.push(new Enemy(x, y, canvas));
-}, 2000); // 2秒後出現
 
 // 🔋チャージ関連
 let isCharging = false;
@@ -53,6 +38,43 @@ let invincible = false;
 
 // 🎯 連射防止
 const keyPressed = {};
+
+// ===================== UBW =====================
+let ubwActive = false;
+let ubwTimer = 0;
+let ubwDuration = 300;
+let ubwSwords = [];
+let ubwFade = 0;
+
+// ------------------- ゲーム初期化 -------------------
+export function startGame() {
+  initGame();
+  isGameRunning = true;
+  isGameOver = false;
+  gameLoop();
+}
+
+function initGame() {
+  player.x = canvas.width / 2;
+  player.y = canvas.height / 2;
+  bullets.length = 0;
+  swords.length = 0;
+  beams.length = 0;
+  enemyBullets.length = 0;
+  enemies.length = 0;
+  explosions.length = 0;
+  score = 0;
+  invincible = false;
+  ubwActive = false;
+  ubwSwords = [];
+  ubwFade = 0;
+  ubwTimer = 0;
+
+  // 最初の敵スポーン
+  setTimeout(() => {
+    spawnEnemy();
+  }, 2000);
+}
 
 // ------------------- 敵生成 -------------------
 function spawnEnemy() {
@@ -81,7 +103,7 @@ function checkCollisions() {
         bullets.splice(i, 1);
         enemies.splice(j, 1);
         explosions.push(new Explosion(e.x, e.y));
-        score += 100; // ✅ スコア加算
+        score += 100;
         break;
       }
     }
@@ -96,7 +118,7 @@ function checkCollisions() {
       if (dist < s.length / 2 + e.radius) {
         enemies.splice(j, 1);
         explosions.push(new Explosion(e.x, e.y));
-        score += 150; // ✅ スコア加算
+        score += 150;
       }
     }
   }
@@ -115,7 +137,7 @@ function checkCollisions() {
         if (perpDist < e.radius + bm.width / 2) {
           enemies.splice(j, 1);
           explosions.push(new Explosion(e.x, e.y));
-          score += 200; // ✅ スコア加算
+          score += 200;
         }
       }
     }
@@ -178,12 +200,6 @@ function clampPlayerPosition() {
 }
 
 // ===================== UBW =====================
-let ubwActive = false;
-let ubwTimer = 0;
-let ubwDuration = 300;
-let ubwSwords = [];
-let ubwFade = 0;
-
 function activateUBW() {
   if (ubwActive) return;
   ubwActive = true;
@@ -214,7 +230,7 @@ function updateUBW() {
   ubwTimer--;
   ubwFade = Math.min(1, ubwFade + 0.02);
 
-  ubwSwords.forEach(s => s.update(enemies));
+  ubwSwords.forEach((s) => s.update(enemies));
 
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
@@ -223,7 +239,7 @@ function updateUBW() {
       if (dist < e.radius + s.length / 2) {
         explosions.push(new Explosion(e.x, e.y));
         enemies.splice(i, 1);
-        score += 300; // ✅ スコア加算
+        score += 300;
         break;
       }
     }
@@ -262,7 +278,7 @@ function drawUBW(ctx) {
   }
   ctx.restore();
 
-  ubwSwords.forEach(s => s.draw(ctx));
+  ubwSwords.forEach((s) => s.draw(ctx));
 }
 
 // ------------------- ゲームループ -------------------
@@ -275,25 +291,28 @@ function gameLoop() {
     player.update(input.keys);
     spawnEnemy();
 
-    enemies.forEach(e => e.update(player.x, player.y));
-    enemies.forEach(e => {
+    enemies.forEach((e) => e.update(player.x, player.y));
+    enemies.forEach((e) => {
       if (Math.random() < 0.02) {
         const angle = Math.atan2(player.y - e.y, player.x - e.x);
         enemyBullets.push(new EnemyBullet(e.x, e.y, angle, canvas));
       }
     });
 
-    bullets.forEach(b => b.update());
-    swords.forEach(s => s.update(enemies));
-    beams.forEach(bm => bm.update());
-    enemyBullets.forEach(eb => eb.update());
-    explosions.forEach(ex => ex.update());
+    bullets.forEach((b) => b.update());
+    swords.forEach((s) => s.update(enemies));
+    beams.forEach((bm) => bm.update());
+    enemyBullets.forEach((eb) => eb.update());
+    explosions.forEach((ex) => ex.update());
 
-    explosions = explosions.filter(ex => ex.active);
+    explosions = explosions.filter((ex) => ex.active);
 
-    for (let i = bullets.length - 1; i >= 0; i--) if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
-    for (let i = swords.length - 1; i >= 0; i--) if (swords[i].isOutOfBounds()) swords.splice(i, 1);
-    for (let i = enemyBullets.length - 1; i >= 0; i--) if (enemyBullets[i].isOutOfBounds()) enemyBullets.splice(i, 1);
+    for (let i = bullets.length - 1; i >= 0; i--)
+      if (bullets[i].isOutOfBounds()) bullets.splice(i, 1);
+    for (let i = swords.length - 1; i >= 0; i--)
+      if (swords[i].isOutOfBounds()) swords.splice(i, 1);
+    for (let i = enemyBullets.length - 1; i >= 0; i--)
+      if (enemyBullets[i].isOutOfBounds()) enemyBullets.splice(i, 1);
 
     for (let i = beams.length - 1; i >= 0; i--) {
       if (beams[i].life !== undefined) {
@@ -307,15 +326,22 @@ function gameLoop() {
   }
 
   player.draw(ctx);
-  explosions.forEach(ex => ex.draw(ctx));
-  enemies.forEach(e => e.draw(ctx));
-  bullets.forEach(b => b.draw(ctx));
-  swords.forEach(s => s.draw(ctx));
-  beams.forEach(bm => bm.draw(ctx));
-  enemyBullets.forEach(eb => eb.draw(ctx));
+  explosions.forEach((ex) => ex.draw(ctx));
+  enemies.forEach((e) => e.draw(ctx));
+  bullets.forEach((b) => b.draw(ctx));
+  swords.forEach((s) => s.draw(ctx));
+  beams.forEach((bm) => bm.draw(ctx));
+  enemyBullets.forEach((eb) => eb.draw(ctx));
 
   if (invincible) {
-    const gradient = ctx.createRadialGradient(player.x, player.y, player.radius, player.x, player.y, player.radius * 4);
+    const gradient = ctx.createRadialGradient(
+      player.x,
+      player.y,
+      player.radius,
+      player.x,
+      player.y,
+      player.radius * 4
+    );
     gradient.addColorStop(0, "rgba(255,255,255,0.5)");
     gradient.addColorStop(1, "rgba(255,255,255,0)");
     ctx.fillStyle = gradient;
@@ -324,7 +350,6 @@ function gameLoop() {
     ctx.fill();
   }
 
-  // ✅ スコア描画
   ctx.fillStyle = "white";
   ctx.font = "20px monospace";
   ctx.textAlign = "left";
@@ -344,15 +369,28 @@ function gameLoop() {
 }
 
 // ------------------- キー入力 -------------------
-window.addEventListener("keydown", e => {
-  if (isGameOver) return;
+window.addEventListener("keydown", (e) => {
+  // Enterでゲーム開始・再表示
+  if (e.key === "Enter") {
+    const startScreen = document.getElementById("startScreen");
+    if (!isGameRunning) {
+      startScreen.style.display = "none";
+      startGame();
+    } else if (isGameOver) {
+      isGameRunning = false;
+      startScreen.style.display = "flex";
+    }
+  }
+
+  if (!isGameRunning || isGameOver) return;
+
   if (keyPressed[e.key]) return;
   keyPressed[e.key] = true;
 
+  // ------------------- プレイヤー操作 -------------------
   if (e.key === "a" || e.key === "A") dashForward();
   if (e.key === "s" || e.key === "S") dashBackward();
   if (e.key === "d" || e.key === "D") dashDiagonal();
-
   if (e.key === "c" || e.key === "C") invincible = !invincible;
 
   if (e.key === " ") bullets.push(new Bullet(player.x, player.y, player.angle, canvas));
@@ -361,7 +399,9 @@ window.addEventListener("keydown", e => {
     const spreadCount = 5;
     const spreadAngle = 10 * (Math.PI / 180);
     for (let i = 0; i < spreadCount; i++)
-      bullets.push(new Bullet(player.x, player.y, player.angle + (i - 2) * spreadAngle, canvas));
+      bullets.push(
+        new Bullet(player.x, player.y, player.angle + (i - 2) * spreadAngle, canvas)
+      );
   }
 
   if (e.key === "z" || e.key === "Z") {
@@ -369,7 +409,14 @@ window.addEventListener("keydown", e => {
     const randomRange = Math.PI / 3;
     for (let i = 0; i < swordCount; i++) {
       const offset = (Math.random() - 0.5) * randomRange;
-      swords.push(new Sword(player.x, player.y, player.angle + offset, canvas, { color: "cyan", speed: 15, length: 40, width: 6 }));
+      swords.push(
+        new Sword(player.x, player.y, player.angle + offset, canvas, {
+          color: "cyan",
+          speed: 15,
+          length: 40,
+          width: 6,
+        })
+      );
     }
   }
 
@@ -392,7 +439,16 @@ window.addEventListener("keydown", e => {
     const count = 12;
     const spread = (Math.PI * 2) / count;
     for (let i = 0; i < count; i++) {
-      swords.push(new Sword(player.x, player.y, i * spread, canvas, { color: "magenta", speed: 6, length: 50, width: 6, homing: true, turnSpeed: 0.05 }));
+      swords.push(
+        new Sword(player.x, player.y, i * spread, canvas, {
+          color: "magenta",
+          speed: 6,
+          length: 50,
+          width: 6,
+          homing: true,
+          turnSpeed: 0.05,
+        })
+      );
     }
   }
 
@@ -408,17 +464,18 @@ window.addEventListener("keydown", e => {
       const e = enemies[i];
       if (Math.hypot(player.x - e.x, player.y - e.y) < blastRadius) {
         enemies.splice(i, 1);
-        score += 250; // ✅ スコア加算
+        score += 250;
       }
     }
   }
 
-  // 🔥 UBW発動
   if (e.key === "u" || e.key === "U") activateUBW();
 });
 
-window.addEventListener("keyup", e => {
+window.addEventListener("keyup", (e) => {
   keyPressed[e.key] = false;
+
+  if (!isGameRunning || isGameOver) return;
 
   if (e.key === "n" || e.key === "N") {
     if (isCharging) {
@@ -429,5 +486,3 @@ window.addEventListener("keyup", e => {
     }
   }
 });
-
-gameLoop();
