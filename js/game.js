@@ -1,5 +1,5 @@
 // ==========================
-// game.js（完全版）
+// game.js（キーUI付き完全版）
 // ==========================
 import { Player } from "./player.js";
 import { Enemy } from "./enemy.js";
@@ -48,9 +48,10 @@ let ubwDuration = 300;
 let ubwSwords = [];
 let ubwFade = 0;
 
-// 攻撃キーリスト（ランダム化対象）
+// 攻撃キー
 const attackKeys = ["q","w","e","r","t","a","s","d","f","z","x","c","v"];
-let keyAttackMap = {}; // ← ランダム割当結果を保存
+let keyAttackMap = {};
+let keyDisplayList = [];
 
 // ==========================
 // 初期化
@@ -71,7 +72,6 @@ function initGame() {
   ubwSwords = [];
   ubwFade = 0;
 
-  // 攻撃キーをランダム割り当て
   randomizeKeyBindings();
 }
 
@@ -94,14 +94,17 @@ function randomizeKeyBindings() {
     "invincibleToggle",
     "ubw"
   ];
-
-  // シャッフル
   const shuffled = attacks.sort(() => Math.random() - 0.5);
   keyAttackMap = {};
   attackKeys.forEach((key, i) => {
     keyAttackMap[key] = shuffled[i];
   });
 
+  // 表示リストを整形
+  keyDisplayList = attackKeys.map(k => ({
+    key: k.toUpperCase(),
+    action: keyAttackMap[k]
+  }));
   console.log("🔀 攻撃キー割り当て:", keyAttackMap);
 }
 
@@ -126,7 +129,6 @@ function spawnEnemy() {
 // 当たり判定
 // ==========================
 function checkCollisions() {
-  // 弾と敵
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     for (let j = enemies.length - 1; j >= 0; j--) {
@@ -142,7 +144,6 @@ function checkCollisions() {
     }
   }
 
-  // 剣と敵
   for (let i = swords.length - 1; i >= 0; i--) {
     const s = swords[i];
     for (let j = enemies.length - 1; j >= 0; j--) {
@@ -156,7 +157,6 @@ function checkCollisions() {
     }
   }
 
-  // ビームと敵
   for (let bm of beams) {
     for (let j = enemies.length - 1; j >= 0; j--) {
       const e = enemies[j];
@@ -176,7 +176,6 @@ function checkCollisions() {
     }
   }
 
-  // 敵弾とプレイヤー
   for (let i = enemyBullets.length - 1; i >= 0; i--) {
     const eb = enemyBullets[i];
     const dist = Math.hypot(player.x - eb.x, player.y - eb.y);
@@ -185,7 +184,6 @@ function checkCollisions() {
     }
   }
 
-  // 敵とプレイヤー
   for (const e of enemies) {
     const dist = Math.hypot(player.x - e.x, player.y - e.y);
     if (dist < player.radius + e.radius) {
@@ -195,7 +193,7 @@ function checkCollisions() {
 }
 
 // ==========================
-// 攻撃パターン群
+// 攻撃アクション
 // ==========================
 function performAttack(action) {
   switch (action) {
@@ -267,7 +265,7 @@ function performAttack(action) {
 }
 
 // ==========================
-// UBW
+// UBW演出
 // ==========================
 function activateUBW() {
   if (ubwActive) return;
@@ -299,7 +297,6 @@ function updateUBW() {
   ubwFade = Math.min(1, ubwFade + 0.02);
 
   ubwSwords.forEach(s => s.update(enemies));
-
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
     for (let s of ubwSwords) {
@@ -312,7 +309,6 @@ function updateUBW() {
       }
     }
   }
-
   if (ubwTimer <= 0) {
     ubwActive = false;
     ubwSwords = [];
@@ -323,22 +319,16 @@ function updateUBW() {
 function drawUBW(ctx) {
   if (!ubwActive) return;
   const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  grd.addColorStop(0, `rgba(255, 50, 50, ${0.8 * ubwFade})`);
-  grd.addColorStop(1, `rgba(100, 0, 0, ${0.9 * ubwFade})`);
+  grd.addColorStop(0, `rgba(255,50,50,${0.8 * ubwFade})`);
+  grd.addColorStop(1, `rgba(100,0,0,${0.9 * ubwFade})`);
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // STAR BLADE X ロゴ
   ctx.save();
   const pulse = Math.sin(Date.now() / 200) * 0.5 + 0.5;
   const glow = 0.4 + pulse * 0.6;
   const fontSize = 100 + pulse * 10;
-  const gradientText = ctx.createLinearGradient(
-    canvas.width / 2 - 200,
-    canvas.height / 2 - 100,
-    canvas.width / 2 + 200,
-    canvas.height / 2 + 100
-  );
+  const gradientText = ctx.createLinearGradient(canvas.width / 2 - 200, canvas.height / 2 - 100, canvas.width / 2 + 200, canvas.height / 2 + 100);
   gradientText.addColorStop(0, `rgba(255,200,50,${glow * ubwFade})`);
   gradientText.addColorStop(0.5, `rgba(255,255,255,${glow * ubwFade})`);
   gradientText.addColorStop(1, `rgba(255,50,50,${glow * ubwFade})`);
@@ -357,6 +347,39 @@ function drawUBW(ctx) {
 }
 
 // ==========================
+// キーUI描画
+// ==========================
+function drawKeyMap(ctx) {
+  if (!isGameRunning || isGameOver) return;
+
+  const panelX = canvas.width - 260;
+  const panelY = 20;
+  const panelW = 240;
+  const lineH = 22;
+  const totalH = lineH * keyDisplayList.length + 30;
+
+  ctx.save();
+  ctx.globalAlpha = 0.6;
+  ctx.fillStyle = "black";
+  ctx.fillRect(panelX, panelY, panelW, totalH);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = "white";
+  ctx.strokeRect(panelX, panelY, panelW, totalH);
+
+  ctx.font = "16px monospace";
+  ctx.fillStyle = "cyan";
+  ctx.textAlign = "center";
+  ctx.fillText("=== KEY MAP ===", panelX + panelW / 2, panelY + 20);
+
+  ctx.textAlign = "left";
+  ctx.fillStyle = "white";
+  keyDisplayList.forEach((item, i) => {
+    ctx.fillText(`${item.key} : ${item.action}`, panelX + 10, panelY + 45 + i * lineH);
+  });
+  ctx.restore();
+}
+
+// ==========================
 // ゲームループ
 // ==========================
 function gameLoop() {
@@ -366,7 +389,6 @@ function gameLoop() {
   if (isGameRunning && !isGameOver) {
     player.update(input.keys);
     spawnEnemy();
-
     enemies.forEach(e => e.update(player.x, player.y));
     enemies.forEach(e => {
       if (Math.random() < 0.02) {
@@ -393,7 +415,6 @@ function gameLoop() {
 
   player?.draw(ctx);
 
-  // 無敵エフェクト
   if (invincible) invincibleEffectAlpha = Math.min(invincibleEffectAlpha + 0.05, 1);
   else invincibleEffectAlpha = Math.max(invincibleEffectAlpha - 0.05, 0);
 
@@ -416,11 +437,12 @@ function gameLoop() {
   beams.forEach(bm => bm.draw(ctx));
   enemyBullets.forEach(eb => eb.draw(ctx));
 
-  // スコア表示
   ctx.fillStyle = "white";
   ctx.font = "20px monospace";
   ctx.textAlign = "left";
   ctx.fillText(`SCORE: ${score}`, 20, 30);
+
+  drawKeyMap(ctx);
 
   if (isGameOver) {
     ctx.fillStyle = "red";
@@ -466,19 +488,16 @@ window.addEventListener("keyup", (e) => {
 });
 
 // ==========================
-// チャージショット発射
+// チャージショット
 // ==========================
 function fireChargeShot(level) {
-  const x = player.x;
-  const y = player.y;
-  const angle = player.angle;
-  if (level === 1) {
+  const x = player.x, y = player.y, angle = player.angle;
+  if (level === 1)
     bullets.push(new Bullet(x, y, angle, canvas, { speed: 10, radius: 5, color: "white" }));
-  } else if (level === 2) {
+  else if (level === 2)
     bullets.push(new Bullet(x, y, angle, canvas, { speed: 14, radius: 10, color: "yellow" }));
-  } else if (level === 3) {
+  else if (level === 3)
     beams.push(new Beam(x, y, angle, canvas, { color: "orange", width: 10, length: 500, life: 60 }));
-  }
 }
 
 // ==========================
@@ -488,4 +507,5 @@ export function startGame() {
   initGame();
   isGameRunning = true;
 }
+
 
