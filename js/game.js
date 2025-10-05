@@ -40,7 +40,7 @@ setTimeout(() => {
   } else {
     enemies.push(new Enemy(x, y, canvas));
   }
-}, 2000); // 2秒
+}, 50000); // 2秒
 
 // 🔋チャージ関連
 let isCharging = false;
