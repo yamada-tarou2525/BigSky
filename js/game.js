@@ -232,6 +232,7 @@ function updateUBW() {
 
   ubwSwords.forEach((s) => s.update(enemies));
 
+  // 衝突処理
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
     for (let s of ubwSwords) {
@@ -255,12 +256,14 @@ function updateUBW() {
 function drawUBW(ctx) {
   if (!ubwActive) return;
 
+  // 背景
   const grd = ctx.createLinearGradient(0, 0, 0, canvas.height);
   grd.addColorStop(0, `rgba(255, 80, 80, ${0.6 * ubwFade})`);
   grd.addColorStop(1, `rgba(50, 0, 0, ${0.8 * ubwFade})`);
   ctx.fillStyle = grd;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+  // 歯車（雰囲気用）
   ctx.save();
   ctx.strokeStyle = `rgba(255,255,255,${0.2 * ubwFade})`;
   ctx.lineWidth = 2;
@@ -285,7 +288,7 @@ function drawUBW(ctx) {
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  drawUBW(ctx);
+  drawUBW(ctx); // 背景先に描画
 
   if (!isGameOver) {
     player.update(input.keys);
@@ -314,6 +317,7 @@ function gameLoop() {
     for (let i = enemyBullets.length - 1; i >= 0; i--)
       if (enemyBullets[i].isOutOfBounds()) enemyBullets.splice(i, 1);
 
+    // ビーム寿命
     for (let i = beams.length - 1; i >= 0; i--) {
       if (beams[i].life !== undefined) {
         beams[i].life--;
@@ -360,9 +364,6 @@ function gameLoop() {
     ctx.font = "bold 48px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2);
-    ctx.fillStyle = "white";
-    ctx.font = "28px monospace";
-    ctx.fillText(`FINAL SCORE: ${score}`, canvas.width / 2, canvas.height / 2 + 60);
   }
 
   requestAnimationFrame(gameLoop);
