@@ -8,8 +8,8 @@ export class ZigZagEnemy {
       this.speed = 2;
       
       // ジグザグ用
-      this.zigzagAmplitude = 50;   // ジグザグ幅 
-      this.zigzagFrequency = 0.05; // ジグザグの速さ 
+      this.zigzagAmplitude = 100;   // ジグザグ幅 
+      this.zigzagFrequency = 0.1; // ジグザグの速さ 
       this.t = 0;                  // 時間パラメータ
       this.prevX = x;
       this.prevY = y;
