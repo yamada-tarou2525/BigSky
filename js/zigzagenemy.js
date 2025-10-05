@@ -8,15 +8,20 @@ export class ZigZagEnemy {
       this.speed = 2;
       
       // ジグザグ用
-      this.angle = 0;          // 移動方向
-      this.zigzagAmplitude = 50; // ジグザグ幅 
-      this.zigzagFrequency = 0.05; // ジグザグの速さ 
-      this.startX = x;         // 初期x座標
-      this.t = 0;              // 時間パラメータ
+      this.zigzagAmplitude = 100;   // ジグザグ幅 
+      this.zigzagFrequency = 0.1; // ジグザグの速さ 
+      this.t = 0;                  // 時間パラメータ
+      this.prevX = x;
+      this.prevY = y;
+      this.angle = 0;              // 移動方向（描画用）
     }
   
     update(playerX, playerY) {
       this.t += 1;
+  
+      // 前回位置を保持
+      this.prevX = this.x;
+      this.prevY = this.y;
   
       // プレイヤー方向に向かう角度
       const dx = playerX - this.x;
@@ -27,9 +32,15 @@ export class ZigZagEnemy {
       const offset = Math.sin(this.t * this.zigzagFrequency) * this.zigzagAmplitude;
   
       // x, y の移動
-      this.x += Math.cos(angleToPlayer) * this.speed - Math.sin(angleToPlayer) * (offset * 0.02);
-      this.y += Math.sin(angleToPlayer) * this.speed + Math.cos(angleToPlayer) * (offset * 0.02);
-  
+      const moveX = Math.cos(angleToPlayer) * this.speed - Math.sin(angleToPlayer) * (offset * 0.02);
+      const moveY = Math.sin(angleToPlayer) * this.speed + Math.cos(angleToPlayer) * (offset * 0.02);
+
+      this.x += moveX;
+      this.y += moveY;
+
+      // 移動方向を更新（描画線用）
+      this.angle = Math.atan2(this.y - this.prevY, this.x - this.prevX);
+
       // 画面内制限
       this.x = Math.min(Math.max(this.x, this.radius), this.canvas.width - this.radius);
       this.y = Math.min(Math.max(this.y, this.radius), this.canvas.height - this.radius);
@@ -52,5 +63,4 @@ export class ZigZagEnemy {
       );
       ctx.stroke();
     }
-  }
-  
+}
