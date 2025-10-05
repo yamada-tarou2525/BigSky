@@ -7,7 +7,7 @@ import { Sword } from "./sword.js";
 import { Beam } from "./beam.js";
 import { Explosion } from "./explosion.js";
 import {ZigZagEnemy} from "./zigzagenemy.js"   //kokok
-
+import { BossEnemy } from "./Boss.js";
 
 
 const canvas = document.getElementById("gameCanvas");
@@ -25,6 +25,11 @@ let explosions = [];
 
 const input = new InputHandler();
 let isGameOver = false;
+
+// --- グローバル変数追加 ---
+let boss = null;        // ★追加★ ボスの参照
+let killCount = 0;      // ★追加★ 倒した敵の数をカウント
+const bossTrigger = 10; // ★追加★ ボス出現条件（敵10体撃破で出現）
 
 // 🔋チャージ関連
 let isCharging = false;
@@ -55,6 +60,16 @@ function spawnEnemy() {
   }
 }
 
+// --- update関数に追加 ---
+if (boss) {
+  boss.update(player.x, player.y);  // ★追加★
+}
+
+// --- draw関数に追加 ---
+if (boss) {
+  boss.draw(ctx);  // ★追加★
+}
+
 // ------------------- 当たり判定 -------------------
 function checkCollisions() {
   // 弾と敵
@@ -65,8 +80,34 @@ function checkCollisions() {
       const dist = Math.hypot(b.x - e.x, b.y - e.y);
       if (dist < b.radius + e.radius) {
         bullets.splice(i, 1);
-        enemies.splice(j, 1);
+        //enemies.splice(j, 1);
+        e.hp--;  // ★追加★ 敵のHPを減らす
+        if (e.hp <= 0) {
+          enemies.splice(j, 1);
+          killCount++; // ★追加★ 敵を倒したらカウント
+
+          // ボス出現条件チェック
+          if (killCount >= bossTrigger && !boss) {
+            boss = new BossEnemy(canvas.width / 2, 100, canvas);
+          }
+        }
+
         break;
+      }
+    }
+    // ボスと弾の当たり判定
+    if (boss) {
+      for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        const dist = Math.hypot(boss.x - b.x, boss.y - b.y);
+        if (dist < boss.radius + b.radius) {
+          bullets.splice(i, 1);
+          boss.hp--;
+          if (boss.hp <= 0) {
+            boss = null;  // ボス撃破！
+            console.log("Boss Defeated!");
+          }
+        }
       }
     }
   }
