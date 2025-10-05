@@ -146,6 +146,32 @@ function fireChargeShot(level) {
   }
 }
 
+// ------------------- 瞬間移動（ダッシュ） -------------------
+function dashForward(distance = 100) {
+  player.x += Math.cos(player.angle) * distance;
+  player.y += Math.sin(player.angle) * distance;
+  clampPlayerPosition();
+}
+function dashBackward(distance = 100) {
+  player.x -= Math.cos(player.angle) * distance;
+  player.y -= Math.sin(player.angle) * distance;
+  clampPlayerPosition();
+}
+function dashDiagonal(distance = 100) {
+  const dir = Math.random() < 0.5 ? 1 : -1; // 前か後ろ
+  const offsetAngle = (Math.random() - 0.5) * (Math.PI / 2); // ±45°
+  const angle = player.angle + offsetAngle;
+  player.x += Math.cos(angle) * distance * dir;
+  player.y += Math.sin(angle) * distance * dir;
+  clampPlayerPosition();
+}
+
+// キャンバス外に出ないように補正
+function clampPlayerPosition() {
+  player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+  player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
+}
+
 // ------------------- ゲームループ -------------------
 function gameLoop() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -234,10 +260,13 @@ function gameLoop() {
 // ------------------- キー入力 -------------------
 window.addEventListener("keydown", e => {
   if (isGameOver) return;
-
-  // すでに押されているキーは無視（長押し防止）
   if (keyPressed[e.key]) return;
   keyPressed[e.key] = true;
+
+  // 瞬間移動系
+  if (e.key === "a" || e.key === "A") dashForward();
+  if (e.key === "s" || e.key === "S") dashBackward();
+  if (e.key === "d" || e.key === "D") dashDiagonal();
 
   // C：無敵切り替え
   if (e.key === "c" || e.key === "C") invincible = !invincible;
@@ -307,7 +336,6 @@ window.addEventListener("keydown", e => {
 });
 
 window.addEventListener("keyup", e => {
-  // 離したらロック解除
   keyPressed[e.key] = false;
 
   // Nキー離す → チャージショット発射
@@ -324,4 +352,5 @@ window.addEventListener("keyup", e => {
 });
 
 gameLoop();
+
 
