@@ -1,66 +1,95 @@
-// zigzagenemy.js
 export class ZigZagEnemy {
-    constructor(x, y, canvas) {
-      this.x = x;
-      this.y = y;
-      this.canvas = canvas;
-      this.radius = 15;
-      this.speed = 2;
-      
-      // ジグザグ用
-      this.zigzagAmplitude = 100;   // ジグザグ幅 
-      this.zigzagFrequency = 0.1; // ジグザグの速さ 
-      this.t = 0;                  // 時間パラメータ
-      this.prevX = x;
-      this.prevY = y;
-      this.angle = 0;              // 移動方向（描画用）
-    }
-  
-    update(playerX, playerY) {
-      this.t += 1;
-  
-      // 前回位置を保持
-      this.prevX = this.x;
-      this.prevY = this.y;
-  
-      // プレイヤー方向に向かう角度
-      const dx = playerX - this.x;
-      const dy = playerY - this.y;
-      const angleToPlayer = Math.atan2(dy, dx);
-  
-      // ジグザグオフセット（正弦波）
-      const offset = Math.sin(this.t * this.zigzagFrequency) * this.zigzagAmplitude;
-  
-      // x, y の移動
-      const moveX = Math.cos(angleToPlayer) * this.speed - Math.sin(angleToPlayer) * (offset * 0.02);
-      const moveY = Math.sin(angleToPlayer) * this.speed + Math.cos(angleToPlayer) * (offset * 0.02);
+  constructor(x, y, canvas) {
+    this.x = x;
+    this.y = y;
+    this.canvas = canvas;
+    this.radius = 15; // 当たり判定はこのまま
+    this.speed = 2;
 
-      this.x += moveX;
-      this.y += moveY;
+    // ジグザグ用
+    this.zigzagAmplitude = 100;
+    this.zigzagFrequency = 0.1;
+    this.t = 0;
+    this.prevX = x;
+    this.prevY = y;
+    this.angle = 0;
+  }
 
-      // 移動方向を更新（描画線用）
-      this.angle = Math.atan2(this.y - this.prevY, this.x - this.prevX);
+  update(playerX, playerY) {
+    this.t += 1;
+    this.prevX = this.x;
+    this.prevY = this.y;
 
-      // 画面内制限
-      this.x = Math.min(Math.max(this.x, this.radius), this.canvas.width - this.radius);
-      this.y = Math.min(Math.max(this.y, this.radius), this.canvas.height - this.radius);
-    }
-  
-    draw(ctx) {
-      ctx.fillStyle = "red";
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-      ctx.fill();
-  
-      // ジグザグの向き表示（線）
-      ctx.strokeStyle = "white";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(this.x, this.y);
-      ctx.lineTo(
-        this.x + Math.cos(this.angle) * this.radius * 2,
-        this.y + Math.sin(this.angle) * this.radius * 2
-      );
-      ctx.stroke();
-    }
+    const dx = playerX - this.x;
+    const dy = playerY - this.y;
+    const angleToPlayer = Math.atan2(dy, dx);
+
+    const offset = Math.sin(this.t * this.zigzagFrequency) * this.zigzagAmplitude;
+
+    const moveX = Math.cos(angleToPlayer) * this.speed - Math.sin(angleToPlayer) * (offset * 0.02);
+    const moveY = Math.sin(angleToPlayer) * this.speed + Math.cos(angleToPlayer) * (offset * 0.02);
+
+    this.x += moveX;
+    this.y += moveY;
+
+    this.angle = Math.atan2(this.y - this.prevY, this.x - this.prevX);
+
+    this.x = Math.min(Math.max(this.x, this.radius), this.canvas.width - this.radius);
+    this.y = Math.min(Math.max(this.y, this.radius), this.canvas.height - this.radius);
+  }
+
+  draw(ctx) {
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+
+    // === 本体 ===
+    const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, this.radius);
+    grad.addColorStop(0, "#ff4444");
+    grad.addColorStop(0.7, "#880000");
+    grad.addColorStop(1, "#330000");
+    ctx.fillStyle = grad;
+
+    ctx.beginPath();
+    ctx.moveTo(this.radius, 0);                    // 機首
+    ctx.lineTo(-this.radius * 0.7, -this.radius); // 左翼
+    ctx.lineTo(-this.radius * 0.35, -this.radius * 0.3);
+    ctx.lineTo(-this.radius * 0.35, this.radius * 0.3);
+    ctx.lineTo(-this.radius * 0.7, this.radius);  // 右翼
+    ctx.closePath();
+    ctx.fill();
+
+    // === ハイライト ===
+    ctx.strokeStyle = "orange";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(this.radius * 0.3, -this.radius * 0.15);
+    ctx.lineTo(this.radius * 0.8, 0);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(this.radius * 0.3, this.radius * 0.15);
+    ctx.lineTo(this.radius * 0.8, 0);
+    ctx.stroke();
+
+    // === 機首の光る目 ===
+    ctx.fillStyle = "orange";
+    ctx.beginPath();
+    ctx.arc(this.radius, 0, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+
+    // 移動方向線（オプション）
+    /*
+    ctx.strokeStyle = "white";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(this.x, this.y);
+    ctx.lineTo(
+      this.x + Math.cos(this.angle) * this.radius * 2,
+      this.y + Math.sin(this.angle) * this.radius * 2
+    );
+    ctx.stroke();
+    */
+  }
 }
