@@ -5,7 +5,7 @@ export class Player {
     this.angle = 0;       // 向き
     this.speed = 5;       // 移動速度
     this.canvas = canvas;
-    this.radius = 12;     // サイズ感（当たり判定用）
+    this.radius = 14;     // 機体サイズ
   }
 
   update(keys) {
@@ -16,10 +16,7 @@ export class Player {
     if (keys["ArrowDown"])  dy += 1;
 
     if (dx !== 0 || dy !== 0) {
-      // 進行方向に角度を設定
       this.angle = Math.atan2(dy, dx);
-
-      // 移動方向を正規化してスピード一定化
       let len = Math.sqrt(dx * dx + dy * dy);
       this.x += this.speed * (dx / len);
       this.y += this.speed * (dy / len);
@@ -31,48 +28,67 @@ export class Player {
   }
 
   draw(ctx) {
-    // 本体（青い三角形）
-    ctx.fillStyle = "blue";
+    ctx.save();
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+
+    // ===== 機体の胴体 =====
+    ctx.fillStyle = "silver"; // メタリックなボディ
     ctx.beginPath();
-    ctx.moveTo(
-      this.x + Math.cos(this.angle) * this.radius * 1.5,
-      this.y + Math.sin(this.angle) * this.radius * 1.5
-    );
-    ctx.lineTo(
-      this.x + Math.cos(this.angle + Math.PI * 2 / 3) * this.radius,
-      this.y + Math.sin(this.angle + Math.PI * 2 / 3) * this.radius
-    );
-    ctx.lineTo(
-      this.x + Math.cos(this.angle - Math.PI * 2 / 3) * this.radius,
-      this.y + Math.sin(this.angle - Math.PI * 2 / 3) * this.radius
-    );
+    ctx.moveTo(20, 0);   // 機首
+    ctx.lineTo(-15, -8); // 左後ろ
+    ctx.lineTo(-10, -3); 
+    ctx.lineTo(-10,  3); 
+    ctx.lineTo(-15,  8); // 右後ろ
     ctx.closePath();
     ctx.fill();
 
-    // 輪郭
-    ctx.strokeStyle = "white";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-
-    // 発射口（中央）
-    ctx.fillStyle = "red";
+    // ===== 両翼 =====
+    ctx.fillStyle = "gray";
     ctx.beginPath();
-    ctx.arc(
-      this.x + Math.cos(this.angle) * this.radius * 1.5,
-      this.y + Math.sin(this.angle) * this.radius * 1.5,
-      3, 0, Math.PI * 2
-    );
+    ctx.moveTo(-8, -3);
+    ctx.lineTo(-20, -10);
+    ctx.lineTo(-15, -3);
+    ctx.closePath();
     ctx.fill();
 
-    // 発射口（両翼：副砲）
-    for (let offset of [Math.PI/2.5, -Math.PI/2.5]) {
-      ctx.beginPath();
-      ctx.arc(
-        this.x + Math.cos(this.angle + offset) * this.radius,
-        this.y + Math.sin(this.angle + offset) * this.radius,
-        3, 0, Math.PI * 2
-      );
-      ctx.fill();
-    }
+    ctx.beginPath();
+    ctx.moveTo(-8, 3);
+    ctx.lineTo(-20, 10);
+    ctx.lineTo(-15, 3);
+    ctx.closePath();
+    ctx.fill();
+
+    // ===== コクピット（青く光る） =====
+    ctx.fillStyle = "cyan";
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 6, 3, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ===== エンジン光（後方に赤い炎っぽさ） =====
+    ctx.fillStyle = "red";
+    ctx.beginPath();
+    ctx.moveTo(-15, -3);
+    ctx.lineTo(-25, 0);
+    ctx.lineTo(-15, 3);
+    ctx.closePath();
+    ctx.fill();
+
+    // ===== 砲口（機首に赤い点） =====
+    ctx.fillStyle = "orange";
+    ctx.beginPath();
+    ctx.arc(20, 0, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // ===== 副砲（両翼に小さな赤点） =====
+    ctx.fillStyle = "orange";
+    ctx.beginPath();
+    ctx.arc(-5, -6, 2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(-5, 6, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
   }
 }
