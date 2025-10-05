@@ -2,16 +2,24 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8" />
-<title>2Dシューティングゲーム（Enterキー版）</title>
+<title>STAR BLADE X</title>
 <style>
-  body {
-    background: #000;
-    color: #fff;
-    font-family: sans-serif;
-    text-align: center;
-    margin: 0; padding: 0;
-    user-select: none;
-  }
+ body {
+  margin: 0;
+  padding: 0;
+  font-family: sans-serif;
+  text-align: center;
+  user-select: none;
+  color: #fff;
+
+  /* 両端に宇宙の色合いを寄せるグラデーション */
+  background: linear-gradient(to right, 
+              #001133 0%,    /* 左端: 青みの暗い宇宙色 */
+              #000000 40%,   /* 中央付近: 黒で暗闇を強調 */
+              #000000 60%,   /* 中央付近: 黒を維持 */
+              #220022 100%   /* 右端: 紫がかった宇宙色 */
+            );
+}
   canvas {
     background: #111;
     display: block;
@@ -28,13 +36,32 @@
     font-size: 16px;
     color: #ccc;
   }
+  h1 {
+  font-family: monospace, sans-serif; /* 標準フォントで未来的に */
+  font-size: 60px;
+
+  /* 宇宙の色合いのグラデーション文字 */
+  background: linear-gradient(to right, #00ccff, #9933ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+
+  /* 光のにじみで宇宙感アップ */
+  text-shadow: 
+    0 0 8px #00ccff,
+    0 0 16px #9933ff,
+    0 0 24px #ffffff;
+  
+  margin: 20px 0;
+  letter-spacing: 4px; /* 文字間を広げてスペース感 */
+}
+
 </style>
 </head>
 <body>
-<h1>2Dシューティングゲーム（Enterキーで操作）</h1>
+<h1>STAR BLADE X</h1>
 <canvas id="gameCanvas" width="800" height="600"></canvas>
 <div id="info">
-  ENTER: ゲーム開始 / 一時停止<br>
+  ENTER: ゲーム開始<br>
 
 </div>
 
